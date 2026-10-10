@@ -21,7 +21,9 @@ const results = {
   blockedExternalRequests: [],
 };
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-await context.addCookies([{ name: 'mandyal_session', value: fixture.adminToken, url: origin }]);
+await context.addCookies([
+  { name: 'fornextgen_travel_session', value: fixture.adminToken, url: origin },
+]);
 await context.route('**/*', (route) => {
   const url = new URL(route.request().url());
   if (url.origin === origin || ['data:', 'blob:'].includes(url.protocol)) return route.continue();
@@ -94,8 +96,14 @@ async function action(name, work) {
 try {
   const customer = await browser.newContext();
   await customer.addCookies([
-    { name: 'mandyal_session', value: fixture.customerToken, url: origin },
+    { name: 'fornextgen_travel_session', value: fixture.customerToken, url: origin },
   ]);
+  const signedIn = await customer.request.get(origin + '/account', { maxRedirects: 0 });
+  assert.equal(
+    signedIn.status(),
+    200,
+    'Customer fixture must be signed in before role-denial checks',
+  );
   const customerResponse = await customer.request.patch(
     `${origin}/api/v1/admin/contact-inquiries/audit-inquiry-2`,
     {
@@ -116,12 +124,10 @@ try {
   await customerPage.goto(`${origin}/admin/contact-inquiries/audit-inquiry-2`, {
     waitUntil: 'domcontentloaded',
   });
-  await customerPage.waitForURL(`${origin}/login?returnTo=/admin`);
+  await customerPage.waitForURL(`${origin}/account`);
   results.authorization.push({
     name: 'Authenticated customer cannot read enquiry details',
-    pass:
-      new URL(customerPage.url()).pathname === '/login' &&
-      new URL(customerPage.url()).searchParams.get('returnTo') === '/admin',
+    pass: new URL(customerPage.url()).pathname === '/account',
   });
   await customer.close();
   // Every admin route, including nested records, plus every rendered GET filter form.

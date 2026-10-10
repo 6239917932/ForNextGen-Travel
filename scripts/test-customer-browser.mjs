@@ -11,7 +11,9 @@ assert.ok(fixture.customerToken);
 const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { height: 900, width: 1440 } });
-await context.addCookies([{ name: 'mandyal_session', value: fixture.customerToken, url: origin }]);
+await context.addCookies([
+  { name: 'fornextgen_travel_session', value: fixture.customerToken, url: origin },
+]);
 const results = {
   errors: [],
   links: [],

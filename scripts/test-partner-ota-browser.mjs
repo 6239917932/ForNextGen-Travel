@@ -13,7 +13,9 @@ assert.ok(fixture.partnerToken, 'Partner browser token is missing from the isola
 const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { height: 1000, width: 1440 } });
-await context.addCookies([{ name: 'mandyal_session', value: fixture.partnerToken, url: origin }]);
+await context.addCookies([
+  { name: 'fornextgen_travel_session', value: fixture.partnerToken, url: origin },
+]);
 const results = {
   origin,
   startedAt: new Date().toISOString(),
