@@ -31,37 +31,19 @@ await context.route('**/*', (route) => {
 
 const page = await context.newPage();
 page.on('pageerror', (error) => results.errors.push({ message: error.message, url: page.url() }));
-const walk = (dir) =>
-  fs
-    .readdirSync(dir, { withFileTypes: true })
-    .flatMap((entry) =>
-      entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)],
-    );
-const pmsRoutes = walk('app/partner/pms')
-  .filter((file) => file.endsWith('page.tsx'))
-  .map((file) =>
-    `/${file
-      .replaceAll('\\', '/')
-      .replace(/^app\//, '')
-      .replace(/\/page.tsx$/, '')}`
-      .replace('/[code]', '/pg')
-      .replace('/[confirmationCode]', '/AUDIT-HOTEL-BOOKING'),
-  );
 const routes = [
   '/partner',
   '/partner/bookings',
   '/partner/amendments',
   '/partner/properties',
   '/partner/inventory',
-  '/partner/channels',
-  '/partner/housekeeping',
   '/partner/reviews',
   '/partner/settlements',
   '/partner/compliance',
   '/partner/tax',
   '/partner/activity',
   '/partner/access',
-  ...pmsRoutes,
+  '/partner/reports',
 ].toSorted();
 
 try {
@@ -122,10 +104,7 @@ try {
         .map((node) => `${node.tagName.toLowerCase()}[name="${node.getAttribute('name') ?? ''}"]`),
       tablesWithoutScrollContainer: [...main.querySelectorAll('table')]
         .filter(
-          (table) =>
-            !table.closest(
-              '.pms-room-rack__table-wrap, .business-report__table-scroll, [role="region"][tabindex]',
-            ),
+          (table) => !table.closest('.business-report__table-scroll, [role="region"][tabindex]'),
         )
         .map((table) => table.querySelector('caption')?.textContent?.trim() || 'uncaptioned table'),
       links: [...main.querySelectorAll('a[href]')].map((node) => ({
@@ -185,11 +164,30 @@ try {
     );
   }
   await page.goto(`${origin}/partner`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
+  for (const removed of ['/partner/pms', '/partner/housekeeping', '/partner/channels']) {
+    const response = await context.request.get(origin + removed, { maxRedirects: 0 });
+    assert.equal(response.status(), 404, removed + ': extracted PMS page must stay unavailable');
+  }
+  for (const removed of [
+    '/api/v1/partner/direct-bookings',
+    '/api/v1/partner/channels',
+    '/api/v1/partner/booking-addons',
+  ]) {
+    const response = await context.request.post(origin + removed, {
+      headers: { Origin: origin },
+      data: {},
+    });
+    assert.equal(response.status(), 404, removed + ': extracted mutation must stay unavailable');
+  }
   const sidebarLinks = await page
     .locator('#workspace-navigation a[href]')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
   const duplicates = sidebarLinks.filter((href, index) => sidebarLinks.indexOf(href) !== index);
-  assert.deepEqual(duplicates, [], `Duplicate PMS sidebar destinations: ${duplicates.join(', ')}`);
+  assert.deepEqual(
+    duplicates,
+    [],
+    `Duplicate OTA supplier sidebar destinations: ${duplicates.join(', ')}`,
+  );
 
   const internalHrefs = [
     ...new Set(
@@ -257,10 +255,10 @@ try {
     total: routes.length,
   };
   fs.writeFileSync(
-    '.gh-task-cache/partner-pms-browser-audit.json',
+    '.gh-task-cache/partner-ota-browser-audit.json',
     JSON.stringify(results, null, 2),
   );
-  console.log(`Partner PMS browser audit passed: ${routes.length}/${routes.length} pages.`);
+  console.log(`Partner OTA browser audit passed: ${routes.length}/${routes.length} pages.`);
 } finally {
   await browser.close();
 }

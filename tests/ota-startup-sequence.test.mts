@@ -46,6 +46,7 @@ process.exit(${stage === failure ? 17 : 0});`,
     cwd: directory,
     env: {
       ...osEnvironment,
+      NODE_ENV: 'production',
       PUBLIC_APP_ORIGIN: 'https://ota-rehearsal.example.invalid',
       REHEARSAL_TRACE: trace,
     },

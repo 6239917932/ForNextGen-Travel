@@ -67,11 +67,11 @@ jobs:
           PLAYWRIGHT_MODULE: ${{ github.workspace }}/.gh-task-cache/browser-tools/node_modules/playwright/index.mjs
         run: node scripts/test-admin-browser.mjs
 
-      - name: Verify every hotel partner PMS route
+      - name: Verify OTA hotel supplier routes and PMS exclusion
         env:
           PLAYWRIGHT_BROWSERS_PATH: .gh-task-cache/browsers
           PLAYWRIGHT_MODULE: ${{ github.workspace }}/.gh-task-cache/browser-tools/node_modules/playwright/index.mjs
-        run: node scripts/test-partner-pms-browser.mjs
+        run: node scripts/test-partner-ota-browser.mjs
 
       - name: Verify every customer account route
         env:
@@ -89,7 +89,7 @@ jobs:
             .gh-task-cache/admin-browser-results.json
             .gh-task-cache/admin-request-desktop.png
             .gh-task-cache/admin-request-mobile.png
-            .gh-task-cache/partner-pms-browser-audit.json
+            .gh-task-cache/partner-ota-browser-audit.json
             .gh-task-cache/customer-browser-audit.json
             admin-audit-runtime.log
 
