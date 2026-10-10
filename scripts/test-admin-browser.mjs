@@ -116,10 +116,12 @@ try {
   await customerPage.goto(`${origin}/admin/contact-inquiries/audit-inquiry-2`, {
     waitUntil: 'domcontentloaded',
   });
-  await customerPage.waitForURL(`${origin}/account`);
+  await customerPage.waitForURL(`${origin}/login?returnTo=/admin`);
   results.authorization.push({
     name: 'Authenticated customer cannot read enquiry details',
-    pass: new URL(customerPage.url()).pathname === '/account',
+    pass:
+      new URL(customerPage.url()).pathname === '/login' &&
+      new URL(customerPage.url()).searchParams.get('returnTo') === '/admin',
   });
   await customer.close();
   // Every admin route, including nested records, plus every rendered GET filter form.
