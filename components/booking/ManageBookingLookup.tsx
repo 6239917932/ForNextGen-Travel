@@ -113,7 +113,7 @@ export function ManageBookingLookup() {
   async function cancelBooking() {
     if (!booking) return;
     const refundMessage = booking.refundable
-      ? 'The demonstration payment will be marked as refunded.'
+      ? 'An eligible refund will be submitted for review. It is completed only after provider confirmation.'
       : 'This rate is non-refundable, so the payment will remain captured.';
     if (!window.confirm(`Cancel booking ${booking.confirmationCode}? ${refundMessage}`)) return;
 

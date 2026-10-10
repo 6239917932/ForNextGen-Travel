@@ -27,6 +27,8 @@ export function SiteFooter() {
           <p className="site-footer__heading">Company</p>
           <nav aria-label="Company information" className="site-footer__links">
             <Link href="/about">About us</Link>
+            <a href={siteConfig.group.href}>Explore {siteConfig.group.name}</a>
+            <a href={siteConfig.group.travelDirectoryHref}>Travel in the Group portfolio</a>
             <Link href="/contact">Contact us and office locations</Link>
             <Link href="/login#business">Business travel workspace</Link>
             <Link href="/login#partner">Hotel partner workspace</Link>

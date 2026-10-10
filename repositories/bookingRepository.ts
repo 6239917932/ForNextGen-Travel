@@ -10,6 +10,7 @@ import {
 import type { ConfirmedPaymentContext } from '@/services/paymentConfirmationService';
 import { BUSINESS_AUDIT_ACTIONS, createBusinessAuditData } from '@/services/businessAuditService';
 import { redeemPromotion } from '@/services/promotionRedemptionService';
+import { remainingCancellationRefundAmount } from '@/lib/hotel/cancellationRefund';
 
 export type BusinessBookingContext = {
   requestId: string;
@@ -256,25 +257,40 @@ function mapBooking(booking: {
 
 export class PrismaBookingRepository implements BookingRepository {
   async cancel(bookingId: string, refundPayment: boolean): Promise<void> {
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-    if (!booking) {
-      return;
-    }
-
-    await prisma.$transaction(async (transaction) => {
-      await transaction.booking.update({ data: { status: 'cancelled' }, where: { id: bookingId } });
-      await transaction.availabilityLock.update({
-        data: { status: 'released' },
-        where: { id: booking.availabilityLockId },
-      });
-      if (refundPayment) {
-        await transaction.paymentTransaction.update({
-          data: { status: 'refunded' },
-          where: { bookingId },
+    await prisma.$transaction(
+      async (transaction) => {
+        const booking = await transaction.booking.findUnique({
+          include: { payment: { include: { refunds: true } } },
+          where: { id: bookingId },
         });
-        // Promotion usage remains consumed until the payment provider confirms a full refund.
-      }
-    });
+        if (!booking || booking.status === 'cancelled') return;
+        await transaction.booking.update({
+          data: { status: 'cancelled' },
+          where: { id: bookingId },
+        });
+        await transaction.availabilityLock.update({
+          data: { status: 'released' },
+          where: { id: booking.availabilityLockId },
+        });
+        const amount = refundPayment
+          ? remainingCancellationRefundAmount(booking.payment, booking.payment?.refunds ?? [])
+          : 0;
+        if (amount > 0 && booking.payment) {
+          await transaction.refundRequest.create({
+            data: {
+              amount,
+              bookingId,
+              currency: booking.payment.currency,
+              paymentId: booking.payment.id,
+              reason:
+                'Eligible customer hotel cancellation; pending provider-confirmed refund review.',
+            },
+          });
+          // Promotion usage remains consumed until the payment provider confirms a full refund.
+        }
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   async findByConfirmationCode(

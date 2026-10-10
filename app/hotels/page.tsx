@@ -5,7 +5,7 @@ import { HotelResultCard } from '@/components/hotel/HotelResultCard';
 import { HotelResultsExplorer } from '@/components/hotel/HotelResultsExplorer';
 import { HotelSearchForm } from '@/components/hotel/HotelSearchForm';
 import { HotelDiscoveryAssistant } from '@/components/hotel/HotelDiscoveryAssistant';
-import { hotelService } from '@/services/hotelService';
+import { hotelService, HotelSearchInputError } from '@/services/hotelService';
 import { createHotelSearchCriteria } from '@/utils/hotelSearchCriteria';
 import { createHotelSearchFilters } from '@/utils/hotelSearchCriteria';
 import { createHotelResultsLocationMarkers } from '@/utils/hotelResultsLocation';
@@ -41,8 +41,11 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
   };
   try {
     resultPage = await hotelService.searchHotels(criteria, filters);
-  } catch {
-    error = 'Hotel search is temporarily unavailable. Please try again.';
+  } catch (cause) {
+    error =
+      cause instanceof HotelSearchInputError
+        ? cause.message
+        : 'Hotel search is temporarily unavailable. Please try again.';
   }
 
   function pageHref(page: number) {

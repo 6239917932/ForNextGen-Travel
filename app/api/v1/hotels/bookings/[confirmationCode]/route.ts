@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
+import { isSameOriginMutation } from '@/lib/api/request';
 import { getBookingAccessCookieName, legacyBookingAccessCookieName } from '@/lib/bookingAccess';
 import { hotelBookingService } from '@/services/hotelBookingService';
 import { reportOperationalError } from '@/lib/observability/operations';
@@ -73,6 +74,14 @@ export async function DELETE(
   request: NextRequest,
   context: BookingRouteContext,
 ): Promise<Response> {
+  if (!isSameOriginMutation(request)) {
+    return Response.json(
+      {
+        error: { code: 'FORBIDDEN_ORIGIN', message: 'Use the travel portal to cancel a booking.' },
+      },
+      { status: 403 },
+    );
+  }
   try {
     const { confirmationCode } = await context.params;
     const accessToken = getAccessToken(request, confirmationCode);

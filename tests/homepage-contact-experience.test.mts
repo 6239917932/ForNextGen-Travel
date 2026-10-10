@@ -31,9 +31,9 @@ test('homepage and footer direct customers to the centralized contact experience
     readFile(new URL('../components/layout/SiteFooter.tsx', import.meta.url), 'utf8'),
   ]);
 
-  assert.match(home, /siteConfig\.officeLocations\.map/);
   assert.match(home, /href="\/contact"/);
-  assert.match(home, /tel:\$\{siteConfig\.supportPhone\.href\}/);
+  assert.match(home, /Contact our team/);
+  assert.match(footer, /tel:\$\{siteConfig\.supportPhone\.href\}/);
   assert.match(footer, /Contact us and office locations/);
   assert.match(footer, /siteConfig\.supportPhone\.display/);
   assert.match(footer, /siteConfig\.legalName/);

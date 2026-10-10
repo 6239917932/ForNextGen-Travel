@@ -2,15 +2,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { HomeBookingWidget } from '@/components/home/HomeBookingWidget';
-import { HomeTravelGallery } from '@/components/home/HomeTravelGallery';
 import { OrganizationStructuredData } from '@/components/seo/OrganizationStructuredData';
-import { siteConfig } from '@/config/site';
 import { prisma } from '@/lib/prisma';
 import { createPublicMetadata } from '@/lib/seo/siteMetadata';
 import { hotelService } from '@/services/hotelService';
 
 const description =
-  'Official website of Mandyal Travels for verified hotel discovery, booking, trip planning and hotel property management in Himachal Pradesh, India.';
+  'Official website of Mandyal Travels for verified hotel discovery, booking, trip planning and hotel supplier listings in Himachal Pradesh, India.';
 
 export const metadata = createPublicMetadata({
   absoluteTitle: true,
@@ -70,20 +68,6 @@ function ArrowIcon() {
   );
 }
 
-function MountainLine() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="home-origin__mountains"
-      focusable="false"
-      viewBox="0 0 560 92"
-    >
-      <path d="M0 78 77 30l47 31 53-48 58 57 53-41 42 31 73-54 54 42 49-22 54 52" fill="none" />
-      <path d="m153 34 24-21 22 22M377 25l26-19 25 20" fill="none" />
-    </svg>
-  );
-}
-
 function formatPrice(amount: number) {
   return new Intl.NumberFormat('en-IN', {
     currency: 'INR',
@@ -124,7 +108,7 @@ export default async function Home() {
       : editorialJourneys;
 
   return (
-    <div className="home-page">
+    <div className="home-page travel-premium">
       <OrganizationStructuredData />
       <section aria-labelledby="home-search-title" className="home-search-hero">
         <Image
@@ -138,15 +122,23 @@ export default async function Home() {
         <div aria-hidden="true" className="home-search-hero__shade" />
         <div className="home-container home-search-hero__content">
           <div className="home-search-hero__copy">
-            <p>Hotels in Himachal and beyond</p>
-            <h1 id="home-search-title">Find your stay. We’ll help with the rest.</h1>
+            <p>Himalayan roots. Exceptional journeys.</p>
+            <h1 id="home-search-title">A change of scenery. A better way to stay.</h1>
             <span>
-              Search trusted hotel inventory with clear room details, secure booking, and human
-              support when you need it.
+              Discover mountain stays, plan your days and keep every booking in one place. Wherever
+              you go, our local team is here to help.
             </span>
           </div>
 
           <HomeBookingWidget />
+          <div className="travel-popular">
+            <span>Explore a place</span>
+            {['Bir Billing', 'Mandi', 'Manali', 'Shimla'].map((place) => (
+              <Link key={place} href={`/hotels?destination=${encodeURIComponent(place)}`}>
+                {place} ↗
+              </Link>
+            ))}
+          </div>
 
           <div className="home-search-hero__quick-links" aria-label="Helpful hotel links">
             <Link href="/trip-planner">Plan a hotel trip</Link>
@@ -157,39 +149,39 @@ export default async function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="home-intro-title" className="home-intro">
-        <div className="home-container home-intro__grid">
-          <div className="home-intro__heading">
-            <p className="home-section__eyebrow">Rooted in Mandi, Himachal Pradesh</p>
-            <h2 className="home-intro__title" id="home-intro-title">
-              Journeys shaped by the mountains.
-              <span> Built for everywhere.</span>
-            </h2>
-          </div>
-
-          <div className="home-intro__details">
-            <p>
-              Mandyal Travels brings the grounded hospitality of our Himalayan home to a modern,
-              connected platform for booking stays—and for local hotel owners to manage their
-              inventory and reach more guests.
-            </p>
-
-            <div className="home-intro__actions">
-              <Link className="home-link-button home-link-button--primary" href="/hotels">
-                Find a stay <ArrowIcon />
-              </Link>
-              <Link className="home-link-button home-link-button--outline" href="/trip-planner">
-                Plan my whole trip
-              </Link>
-            </div>
-
-            <ul className="home-intro__assurances" aria-label="Mandyal Travels platform benefits">
-              <li>Transparent choices</li>
-              <li>Secure booking journey</li>
-              <li>Local understanding</li>
-            </ul>
-          </div>
-        </div>
+      <section className="travel-journeys home-container" aria-label="Choose your travel journey">
+        {[
+          {
+            number: '01',
+            title: 'Find your next stay',
+            text: 'Compare room choices, rates and policies before you book.',
+            href: '/hotels',
+            action: 'Explore hotels',
+          },
+          {
+            number: '02',
+            title: 'Make the days your own',
+            text: 'Build a stay-first itinerary around your interests and pace.',
+            href: '/trip-planner',
+            action: 'Plan a trip',
+          },
+          {
+            number: '03',
+            title: 'Everything, in one place',
+            text: 'Find your confirmation, manage a booking or reach our team.',
+            href: '/manage-booking',
+            action: 'Manage booking',
+          },
+        ].map((item) => (
+          <Link href={item.href} key={item.number}>
+            <span>{item.number} / YOUR JOURNEY</span>
+            <h2>{item.title}</h2>
+            <p>{item.text}</p>
+            <strong>
+              {item.action} <ArrowIcon />
+            </strong>
+          </Link>
+        ))}
       </section>
 
       {featuredHotels.length > 0 ? (
@@ -197,15 +189,14 @@ export default async function Home() {
           <div className="home-container">
             <div className="home-section__heading home-section__heading--row">
               <div>
-                <p className="home-section__eyebrow">Verified places to stay</p>
+                <p className="home-section__eyebrow">Places to explore</p>
                 <h2 className="home-section__title" id="featured-stays-title">
-                  Hotels ready to welcome you.
+                  Find a stay that suits your journey.
                 </h2>
               </div>
               <div className="home-discovery__heading-action">
                 <p className="home-section__description">
-                  Explore published properties with live room choices and rates managed through the
-                  Mandyal hotel platform.
+                  Explore property details, compare room choices and review pricing in hotel search.
                 </p>
                 <Link className="home-text-link" href="/hotels">
                   View all available stays <ArrowIcon />
@@ -268,7 +259,7 @@ export default async function Home() {
             <p className="home-section__description">
               {featuredDestinations.length > 0
                 ? 'Practical, human-reviewed local context to help you choose where to stay and what to know before you travel.'
-                : 'Start with a place and a pace that feel right. Live room availability and final prices are always confirmed in hotel search.'}
+                : 'Start with a place and a pace that feel right. Check room availability in hotel search, then review your final quote before you confirm.'}
             </p>
           </div>
 
@@ -301,67 +292,37 @@ export default async function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="supplier-launch-title" className="home-travel" id="supplier-launch">
-        <div className="home-container">
-          <div className="home-section__heading home-section__heading--row">
-            <div>
-              <p className="home-section__eyebrow">Now onboarding in Himachal Pradesh</p>
-              <h2 className="home-section__title" id="supplier-launch-title">
-                Put your hotel business online.
-              </h2>
-            </div>
-            <p className="home-section__description">
-              Manage your property from one secure workspace. Customer discovery and bookings can
-              grow as verified hotel inventory joins the platform.
-            </p>
-          </div>
-
-          <div className="travel-options-grid travel-options-grid--launch">
-            <Link className="travel-option" href="/login#partner">
-              <span className="travel-option__number">01</span>
-              <span className="travel-option__status">Hotel PMS</span>
-              <h3>List and manage your hotel</h3>
-              <p>
-                Control properties, rooms, rates, availability, reservations, and stay operations.
-              </p>
-              <span className="travel-option__arrow" aria-hidden="true">
-                <ArrowIcon />
-              </span>
-            </Link>
-          </div>
+      <section className="travel-story home-container" aria-labelledby="travel-story-title">
+        <div className="travel-story__image">
+          <Image
+            src="/home/hero/bir-billing-14.jpg"
+            alt="A paraglider above the green Kangra valley"
+            fill
+            sizes="(max-width: 760px) 100vw, 50vw"
+          />
+          <span>THE HIMALAYAS, AT YOUR OWN PACE</span>
+        </div>
+        <div className="travel-story__copy">
+          <p className="home-section__eyebrow">Local roots. A wider horizon.</p>
+          <h2 id="travel-story-title">Go somewhere that stays with you.</h2>
+          <p>
+            From a quiet village café to a sunrise over the Dhauladhar, the best journeys leave room
+            for discovery. We bring the warmth of our Himachal home to a simpler way to find and
+            book your stay.
+          </p>
+          <Link className="home-link-button home-link-button--primary" href="/trip-planner">
+            Shape your next journey <ArrowIcon />
+          </Link>
         </div>
       </section>
-
-      <section aria-labelledby="origin-title" className="home-origin" id="why-mandyal">
-        <div className="home-container home-origin__grid">
-          <div className="home-origin__story">
-            <p className="home-section__eyebrow">The meaning behind our name</p>
-            <h2 className="home-section__title" id="origin-title">
-              Mandyal is our identity.
-            </h2>
-            <p>
-              We come from Mandi—the meeting place of mountain roads, rivers, communities, and
-              journeys across Himachal Pradesh. “Mandyal” is the identity we carry from home and the
-              spirit we bring to every traveller we serve.
-            </p>
-            <blockquote>“Go far, but carry the warmth of home with you.”</blockquote>
-            <p className="home-origin__signature">— The Mandyal way to travel</p>
-            <MountainLine />
-          </div>
-
-          <HomeTravelGallery />
-        </div>
-      </section>
-
-      <section aria-labelledby="trust-title" className="home-trust">
+      <section className="home-trust" aria-labelledby="trust-title">
         <div className="home-container">
           <div className="home-section__heading">
-            <p className="home-section__eyebrow">Thoughtful by design</p>
+            <p className="home-section__eyebrow">Confidence at every step</p>
             <h2 className="home-section__title" id="trust-title">
-              Modern travel, with a more human point of view.
+              More clarity. Less guesswork.
             </h2>
           </div>
-
           <div className="home-trust__grid">
             {trustPoints.map((point) => (
               <article className="home-trust__item" key={point.number}>
@@ -371,63 +332,75 @@ export default async function Home() {
               </article>
             ))}
           </div>
-
-          <section aria-labelledby="office-presence-title" className="home-presence">
-            <div className="home-presence__intro">
-              <div>
-                <p className="home-section__eyebrow">Here when you need us</p>
-                <h2 id="office-presence-title">Himachal roots. A growing regional presence.</h2>
-              </div>
-              <p>
-                Reach our travel support team directly or find the Mandyal Travels office presence
-                closest to you. For booking help, include your confirmation reference so we can
-                assist faster.
-              </p>
-            </div>
-
-            <div className="home-presence__grid">
-              {siteConfig.officeLocations.map((office) => (
-                <article className="home-office-card" key={`${office.type}-${office.locality}`}>
-                  <span>{office.type}</span>
-                  <address>
-                    <strong>{office.locality}</strong>
-                    <small>{office.region}</small>
-                  </address>
-                </article>
-              ))}
-            </div>
-
-            <div className="home-contact-strip">
-              <div>
-                <span>Call our team</span>
-                <a href={`tel:${siteConfig.supportPhone.href}`}>
-                  {siteConfig.supportPhone.display}
-                </a>
-              </div>
-              <div>
-                <span>Email support</span>
-                <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>
-              </div>
-              <Link className="home-link-button home-link-button--primary" href="/contact">
-                Contact us <ArrowIcon />
-              </Link>
-            </div>
-          </section>
-
-          <div className="home-cta">
-            <div>
-              <p className="home-section__eyebrow">Ready when you are</p>
-              <h2>Where should your next journey begin?</h2>
-            </div>
-            <div className="home-cta__actions">
-              <Link className="home-link-button home-link-button--primary" href="/hotels">
-                Search hotels
-              </Link>
-              <Link className="home-link-button home-link-button--outline" href="/login#partner">
-                List your hotel
-              </Link>
-            </div>
-          </div>
+        </div>
+      </section>
+      <section
+        className="travel-service home-container"
+        aria-label="Travel support and hotel suppliers"
+      >
+        <article>
+          <p className="home-section__eyebrow">A real team, within reach</p>
+          <h2>
+            Travel plans change.
+            <br />
+            We’re here to help.
+          </h2>
+          <p>
+            For booking questions or local guidance, talk to our travel support team. Have your
+            booking reference ready when you contact us.
+          </p>
+          <Link className="home-link-button home-link-button--primary" href="/contact">
+            Contact our team <ArrowIcon />
+          </Link>
+        </article>
+        <article id="supplier-launch">
+          <p className="home-section__eyebrow">For hotel partners</p>
+          <h2>
+            Your next guest
+            <br />
+            starts here.
+          </h2>
+          <p>
+            Apply to list your property in our travel marketplace. Publish room types, rates and
+            availability, and receive travel bookings through your supplier account.
+          </p>
+          <Link className="home-link-button home-link-button--outline" href="/partners/apply">
+            List your hotel <ArrowIcon />
+          </Link>
+        </article>
+      </section>
+      <section className="travel-faq home-container" aria-labelledby="travel-faq-title">
+        <div>
+          <p className="home-section__eyebrow">Before you travel</p>
+          <h2 id="travel-faq-title">A few helpful answers.</h2>
+          <Link className="home-text-link" href="/contact">
+            Have another question? <ArrowIcon />
+          </Link>
+        </div>
+        <div>
+          <details>
+            <summary>How do I find the right hotel?</summary>
+            <p>
+              Search by city, local area or hotel, choose your dates and guest count, then compare
+              available rooms. Check the total price, inclusions and cancellation policy before
+              confirming.
+            </p>
+          </details>
+          <details>
+            <summary>Can I change or cancel a booking?</summary>
+            <p>
+              Open Manage booking to find your reservation and its available options. Changes and
+              refunds depend on the policy shown for your booked room.
+            </p>
+            <Link href="/manage-booking">Find my booking →</Link>
+          </details>
+          <details>
+            <summary>Are flights, cars and buses available?</summary>
+            <p>
+              Hotel search is available now. Flights, cars and buses are coming soon. Contact our
+              team if you’d like to hear when those services open.
+            </p>
+          </details>
         </div>
       </section>
     </div>

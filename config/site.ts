@@ -10,6 +10,11 @@ export interface OfficeLocation {
 }
 
 export const siteConfig = {
+  group: {
+    name: 'ForNextGen Group',
+    href: 'https://www.fornextgengroup.com',
+    travelDirectoryHref: 'https://www.fornextgengroup.com/solutions.html#travel',
+  },
   description:
     'Thoughtful travel planning, trusted bookings, and connected journeys from the Himalayas to everywhere.',
   legalName: 'Mandyal Travels Services Private Limited',

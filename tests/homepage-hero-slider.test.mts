@@ -42,18 +42,15 @@ test('homepage hero provides a focused hotel-first booking widget', async () => 
   assert.match(page, /mandyal-travel-hero-v2\.png/);
   assert.match(page, /home-search-hero__shade/);
   assert.match(page, /<HomeBookingWidget \/>/);
-  assert.match(page, /<HomeTravelGallery \/>/);
-  assert.match(page, /Find your stay\. We’ll help with the rest\./);
-  assert.match(
-    page,
-    /Search trusted hotel inventory with clear room details, secure booking, and human\s+support when you need it/,
-  );
+  assert.match(page, /travel-story__image/);
+  assert.match(page, /A change of scenery\. A better way to stay\./);
+  assert.match(page, /Discover mountain stays, plan your days and keep every booking in one place/);
   assert.match(page, /className="home-search-hero__quick-links"/);
   assert.match(page, /Plan a hotel trip/);
   assert.match(page, /List your hotel/);
   assert.doesNotMatch(page, /supplier integrations are verified/);
   assert.doesNotMatch(page, /<HomeHeroSlider \/>/);
-  assert.match(page, /<h2 className="home-intro__title" id="home-intro-title">/);
+  assert.match(page, /Choose your travel journey/);
 
   assert.match(widget, /useState<BookingProduct>\('hotels'\)/);
   assert.match(widget, /role="tablist"/);

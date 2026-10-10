@@ -35,6 +35,13 @@ const databaseRuntime = read('lib/database/runtime.ts');
 const cutoverVerifier = read('scripts/rehearse-postgresql-cutover.mjs');
 const releaseVerifier = read('scripts/verify-release-env.mjs');
 
+for (const pattern of ['*.db*', '*.sqlite*', '*.pem', '*.key', '*.p12', '*.pfx']) {
+  if (!dockerignore.split(/\r?\n/).some((line) => line.trim() === pattern))
+    failures.push(
+      `Container context must exclude database sidecars and private credentials: ${pattern}`,
+    );
+}
+
 requireText(
   nextConfig,
   "process.env.NEXT_OUTPUT_MODE === 'standalone'",

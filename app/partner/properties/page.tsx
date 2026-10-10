@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
 import { prisma } from '@/lib/prisma';
 
-export const metadata: Metadata = { title: 'Hotel property management' };
+export const metadata: Metadata = { title: 'Hotel marketplace listings' };
 
 export default async function PartnerPropertiesPage() {
   const user = await getCurrentUser();
@@ -20,7 +20,6 @@ export default async function PartnerPropertiesPage() {
     include: {
       rooms: {
         include: {
-          physicalRooms: { orderBy: { roomNumber: 'asc' } },
           ratePlans: { orderBy: { createdAt: 'asc' } },
         },
         orderBy: { createdAt: 'asc' },

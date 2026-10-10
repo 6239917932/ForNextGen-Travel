@@ -18,8 +18,8 @@ export default function MarketplacePricingPage() {
         <h1>How marketplace pricing works</h1>
         <p>
           Every booking is classified by source before money is collected. Mandyal marketplace
-          bookings use an 18% all-inclusive commercial fee; direct PMS bookings and external OTA
-          imports follow separate rules. Applicable government taxes are shown before payment.
+          bookings use an 18% all-inclusive commercial fee. Applicable government taxes are shown
+          before payment.
         </p>
         <div className="legal-draft-notice" role="note">
           Live marketplace payments and public partner listings remain disabled until GST,
@@ -38,37 +38,8 @@ export default function MarketplacePricingPage() {
               standard gateway processing. The customer sees the total before payment.
             </p>
           </Card>
-          <Card>
-            <h3>PMS direct · online</h3>
-            <p>
-              6% of booking value, minimum ₹99, when a hotel-created direct or walk-in booking is
-              paid through an enabled Mandyal payment flow.
-            </p>
-          </Card>
-          <Card>
-            <h3>PMS direct · offline</h3>
-            <p>
-              3% of booking value, minimum ₹49, when the hotel records cash, its own UPI, or its own
-              POS. The fee remains payable to Mandyal; the PMS must record the actual payment mode.
-            </p>
-          </Card>
-          <Card>
-            <h3>External OTA import</h3>
-            <p>
-              0% Mandyal booking commission. The OTA&apos;s own contract and charges remain between
-              the hotel and that OTA. Imported payments must never be represented as collected by
-              Mandyal.
-            </p>
-          </Card>
         </div>
-        <h2>PMS subscription</h2>
-        <p>
-          Months 1–6 are free. Months 7–12 are charged at 50% of the applicable room tier. From
-          month 13, monthly prices are ₹1,999 for 1–10 rooms, ₹2,999 for 11–20, ₹4,499 for 21–35,
-          ₹5,999 for 36–50, and ₹8,999 for 51–100, plus GST. Larger properties require a written
-          quote. A standard-rate annual term beginning in month 13 or later charges the equivalent
-          of 10 months. Transaction fees apply from day one.
-        </p>
+
         <p>
           Supplier settlement becomes eligible only after successful capture, checkout,
           reconciliation, and clearance of refund, fraud, chargeback, compliance, or legal holds.

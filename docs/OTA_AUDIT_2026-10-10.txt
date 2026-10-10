@@ -1,0 +1,107 @@
+ForNextGen Travel audit and remediation — 10 October 2026
+
+Scope
+Independent OTA checkout. This is a source and local sample review, not an
+authorization to deploy, migrate real accounts, activate supply or move money.
+Current legal identity and public domain remain Mandyal Travels. PMS operational
+routes stay excluded; shared schema history is retained to preserve data.
+
+Architecture, database and deployment
+Next 16.3.8, React 19.3 and Prisma 7.10. Independent preview database and token
+key; no shared PMS session or database credentials. Offline checks cover API and
+deployment contracts, 116 migrations, PostgreSQL source parity and separation.
+No new migration or real data deletion. PostgreSQL live rehearsal, Docker image
+execution, restore/PITR evidence and independent hosting remain external gates.
+
+Search, discovery, supply and pricing
+Shared stay validation now rejects impossible/past dates, stays beyond 90 nights,
+fractional/nonfinite guests and out-of-range occupancy before quote creation.
+Invalid search requests receive useful safe messages. Stop-sell restrictions are
+respected. Seasonal totals use exact room charges rather than multiplying rounded
+nightly averages; cheapest choice and sorting include taxes. Invalid or mismatched
+currencies fail closed; helper checks cover INR and decimal USD arithmetic.
+Production cannot publish fixture inventory. Cars, buses and flights remain
+coming soon until approved adapters and supply certification are available.
+Tax/legal policy approval and real supplier inventory validation are not established
+by these tests. Existing booking amendment controls remain covered by domain tests;
+every amendment/provider branch was not exercised against live services.
+
+Booking, confirmation, cancellation and refunds
+Persistent cancellation formerly marked payment refunded without provider evidence.
+It now cancels the booking, releases the lock and creates one pending eligible
+refund request inside a serializable transaction. Captured payment remains captured.
+Reserved and approved refund amounts prevent over-requesting. Full provider-confirmed
+refund approval updates payment status; partial refunds retain captured status.
+Customer copy explains review and provider completion. Same-origin checks precede
+cookie/token cancellation access. The in-memory demo repository retains its own
+demo behavior; the public persistent path uses the reviewed request workflow.
+The isolated HTTP sample checks quote validation, booking, idempotent replay,
+unauthorized access denial, cross-origin cancellation denial, repeated cancellation,
+and exactly one pending refund with the sandbox payment still captured. Synthetic
+audit records remain in the preview database. No provider calls or live money moved.
+
+Accounts, administration, privacy and policy readiness
+Existing domain/API checks cover roles, protected operations, password/session/MFA,
+rate limits, privacy requests, consent, reconciliation and settlement controls.
+This is not a penetration test, counsel approval or a signed-in production admin
+review. Actual provider/webhook certification, secret-store credentials, policy
+approval, authenticated email/media storage and worker operations remain required.
+
+Customer experience, accessibility and Group connections
+The previous professional OTA redesign is retained: search-first hero, destination
+and journey discovery, responsive layouts, useful support and clear unavailable
+transport states. Product tabs now support arrows, Home/End and roving keyboard focus.
+Sample inventory notice is global, including search and booking pages. Unsupported
+claims of verified/live homepage inventory were removed. Footer links connect to
+ForNextGen Group and its Travel portfolio. Group already contains the planned
+Travel-domain backlink. These are public navigation links, not shared login or data.
+No Group source changes were needed. Current browser verification limitations and
+runtime results are recorded in the final evidence below; no WCAG certification claimed.
+
+SEO and publication
+PUBLIC_INDEXING_ENABLED defaults false. Public indexing requires explicit approval,
+production mode and fixtures disabled, at build AND runtime. Preview metadata and
+HTTP headers are noindex; robots disallows all and sitemap is empty. Approved
+sitemap mode preserves static/healthy sources when one inventory source fails.
+Private route protections remain. Domain and indexing cutover require release approval.
+
+Dependency security
+Updated Next and matching ESLint config from 16.3.4 to 16.3.8, fast-uri override
+to 3.1.8 and compatible lockfile dependencies. Production-only npm audit has zero
+reported advisories. Five high advisories remain in the development lint chain
+(braces/micromatch/fast-glob/Next ESLint). Available automatic force remediation
+would downgrade the config incompatibly; it was not applied. Current Docker runner
+copies all node_modules for Prisma tooling, so this scoped production-only result
+must not be represented as an advisory-free container. Container packaging needs
+its own executable verification before release.
+Primary advisory references:
+https://github.com/advisories/GHSA-vcvr-r3jv-pc5j
+https://github.com/advisories/GHSA-hrr3-gc8f-f4qj
+https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+
+Code cleanup and preservation
+Removed obsolete private search price-selection/calculation functions after their
+replacement passed tests; consolidated repeated initial stay validation. Retained
+historical schema and the unused gallery because its unique assets and dedicated
+tests do not establish safe wholesale deletion. No speculative package/model cleanup.
+
+Production observation
+Read-only Mandyal production monitor passed eight requests, security/readiness and
+liveness checks at 2026-10-10T05:17:43.927Z; p95 1028 ms. This is the existing live
+service, not deployment of this checkout. New domains were not verified live.
+Local bounded load checks are not production capacity or supplier load certification.
+
+Final verification evidence
+635 domain tests passed after final homepage copy changes. Lint and TypeScript passed.
+Seven offline readiness checks passed, including static links, migrations, API,
+PostgreSQL source parity, deployment and launch-register contracts.
+Sample HTTP journey passed. Production Webpack build passed (193 generated pages).
+Formatting passed. Runtime public smoke, nine-route accessibility baseline, internal
+link crawl and bounded load all passed. Forty health requests at concurrency five
+had zero errors and p95 191.13 ms on the local development preview.
+Browser connection recovered with a fresh tab. At 375x812 the search controls fit
+the mobile layout and navigation opens/closes. ArrowRight switches Hotels to Cars
+with the coming-soon panel; Home returns to Hotels with focus. Desktop screenshot
+at 1280x900 and mobile screenshot are saved as ota-audit-desktop.jpg and
+ota-audit-mobile.jpg in ../outputs. Browser viewport override was reset afterward.
+Evidence logs are in ../outputs/ota-audit-*.log and ota-offline-readiness/report.json.

@@ -8,6 +8,7 @@ import { BookingProvider } from '@/context/BookingContext';
 import { getCurrentUser } from '@/lib/auth/session';
 import { PUBLIC_SHARE_IMAGE, PUBLIC_SITE_ORIGIN } from '@/lib/seo/siteMetadata';
 import { getVisibleServiceAdvisories } from '@/services/serviceAdvisoryService';
+import { isFixtureInventoryEnabled } from '@/lib/inventory/fixtureInventoryPolicy';
 
 import './globals.css';
 
@@ -109,6 +110,11 @@ export default async function RootLayout({
         </a>
         <BookingProvider>
           <SiteHeader user={user ? { firstName: user.firstName, role: user.role } : null} />
+          {isFixtureInventoryEnabled() ? (
+            <p className="travel-preview-note" role="note">
+              Design preview · Sample hotel inventory and prices are for testing.
+            </p>
+          ) : null}
           <BackNavigation />
           <ServiceAdvisoryBanner advisories={advisories} />
           <main id="main-content" tabIndex={-1}>

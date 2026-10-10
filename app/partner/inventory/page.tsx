@@ -119,7 +119,7 @@ export default function PartnerInventoryPage() {
       setInventory(result.data);
       form.reset();
       setSuccess(
-        'The PMS calendar controls were saved. Check inventory again to view each daily control.',
+        'The availability calendar controls were saved. Check inventory again to view each daily control.',
       );
     } catch {
       setError('The partner service could not be reached.');
@@ -289,7 +289,7 @@ export default function PartnerInventoryPage() {
                 dates
               </label>
               <Button fullWidth isLoading={isSaving} type="submit" variant="primary">
-                Save PMS calendar
+                Save availability calendar
               </Button>
             </form>
           </Card>
@@ -376,7 +376,9 @@ export default function PartnerInventoryPage() {
           {hasLoaded && inventory.length === 0 ? (
             <Card>
               <strong>No room inventory is configured.</strong>
-              <p>Create a property and its first room type before using the PMS calendar.</p>
+              <p>
+                Create a property and its first room type before using the availability calendar.
+              </p>
               <Link className="home-card__link" href="/partner/properties">
                 Open property setup
               </Link>

@@ -1,4 +1,7 @@
 import type { NextConfig } from 'next';
+import { mkdirSync, readdirSync } from 'node:fs';
+import path from 'node:path';
+import { isPublicIndexingEnabled } from './lib/seo/indexingPolicy.ts';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const contentSecurityPolicy = [
@@ -46,6 +49,48 @@ export const noIndexHeaderSources = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  // Windows sandbox filesystems can reject concurrent output-directory creation.
+  // Keep the standard Linux release configuration unchanged.
+  ...(process.platform === 'win32' && process.env.NODE_ENV === 'production'
+    ? {
+        webpack(config: Parameters<NonNullable<NextConfig['webpack']>>[0]) {
+          // Pre-create route folders serially, before Webpack emits files concurrently.
+          // This avoids intermittent EPERM from recursive mkdir on Windows sandboxes.
+          config.plugins.push({
+            apply(compiler: {
+              hooks: { beforeCompile: { tap: (name: string, callback: () => void) => void } };
+              options: { output: { path: string } };
+            }) {
+              compiler.hooks.beforeCompile.tap('PrepareWindowsRouteDirectories', () => {
+                const appRoot = path.join(process.cwd(), 'app');
+                const configuredOutput = path.resolve(compiler.options.output.path);
+                const outputRoot =
+                  path.basename(configuredOutput) === 'chunks'
+                    ? path.dirname(configuredOutput)
+                    : configuredOutput;
+                const buildRoot = path.join(process.cwd(), '.next');
+                if (outputRoot !== buildRoot && !outputRoot.startsWith(`${buildRoot}${path.sep}`))
+                  return;
+                const prepare = (relative: string) => {
+                  mkdirSync(path.join(outputRoot, 'app', relative), { recursive: true });
+                  mkdirSync(path.join(buildRoot, 'types', 'app', relative), { recursive: true });
+                  mkdirSync(path.join(buildRoot, 'static', 'chunks', 'app', relative), {
+                    recursive: true,
+                  });
+                  for (const entry of readdirSync(path.join(appRoot, relative), {
+                    withFileTypes: true,
+                  })) {
+                    if (entry.isDirectory()) prepare(path.join(relative, entry.name));
+                  }
+                };
+                prepare('');
+              });
+            },
+          });
+          return config;
+        },
+      }
+    : {}),
   output: process.env.NEXT_OUTPUT_MODE === 'standalone' ? 'standalone' : undefined,
   poweredByHeader: false,
   async headers() {
@@ -74,6 +119,9 @@ const nextConfig: NextConfig = {
               ]),
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
+          ...(!isPublicIndexingEnabled()
+            ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }]
+            : []),
         ],
         source: '/:path*',
       },

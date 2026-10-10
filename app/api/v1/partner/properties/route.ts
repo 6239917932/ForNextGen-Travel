@@ -18,7 +18,6 @@ export async function GET(request: Request) {
     include: {
       rooms: {
         include: {
-          physicalRooms: { orderBy: { roomNumber: 'asc' } },
           ratePlans: { orderBy: { createdAt: 'asc' } },
         },
         orderBy: { createdAt: 'asc' },

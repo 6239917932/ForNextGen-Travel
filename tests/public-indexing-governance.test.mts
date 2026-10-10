@@ -97,7 +97,7 @@ test('public sitemap includes normalized public records only', () => {
   );
 });
 
-test('public metadata emits canonical, share, and crawler directives', () => {
+test('public metadata emits canonical and share data but keeps the preview unindexed', () => {
   const metadata = createPublicMetadata({
     description: 'A public description suitable for search results.',
     path: '/about',
@@ -108,7 +108,7 @@ test('public metadata emits canonical, share, and crawler directives', () => {
   assert.equal(metadata.alternates?.canonical, '/about');
   assert.equal(
     metadata.robots && typeof metadata.robots === 'object' ? metadata.robots.index : undefined,
-    true,
+    false,
   );
   assert.equal(metadata.openGraph?.url, '/about');
   assert.equal(metadata.openGraph?.siteName, 'Mandyal Travels');
@@ -137,7 +137,7 @@ test('homepage presents one consistent official company identity to crawlers', (
   );
 
   assert.match(homepageSource, /Official website of Mandyal Travels/);
-  assert.match(homepageSource, /Find your stay\. We’ll help with the rest\./);
+  assert.match(homepageSource, /A change of scenery\. A better way to stay\./);
   assert.match(structuredDataSource, /'@type': 'WebPage'/);
   assert.match(structuredDataSource, /mainEntity: \{ '@id': organizationId \}/);
   assert.match(structuredDataSource, /propertyID: 'CIN'/);

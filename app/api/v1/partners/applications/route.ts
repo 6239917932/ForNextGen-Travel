@@ -7,10 +7,6 @@ import {
 } from '@/services/partnerOperationsService';
 import type { ApiErrorResponse } from '@/types/commerce';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
-import {
-  assertPartnerEnrollmentComplete,
-  PartnerEnrollmentError,
-} from '@/services/partnerEnrollmentService';
 import { after } from 'next/server';
 import {
   isPartnerAgreementType,
@@ -31,15 +27,6 @@ export async function POST(request: Request) {
   }
   const user = await getCurrentUser();
   if (!user) return failure('AUTH_REQUIRED', 'Sign in before requesting supplier access.', 401);
-  if (await isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING')) {
-    try {
-      await assertPartnerEnrollmentComplete(user.id);
-    } catch (error) {
-      return error instanceof PartnerEnrollmentError
-        ? failure(error.code, error.message, 409)
-        : failure('ONBOARDING_CHECK_FAILED', 'Supplier enrollment could not be verified.', 500);
-    }
-  }
   const rateLimit = await consumeRateLimit({
     action: 'PARTNER_APPLICATION_CREATE',
     identifier: getRequestRateLimitIdentifier(request, user.id),

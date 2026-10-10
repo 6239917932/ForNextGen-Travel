@@ -66,6 +66,9 @@ test('web image fails closed when no database URL is injected', () => {
     startup.indexOf('db:deploy:postgresql') < startup.indexOf('verify-live-postgresql-schema.mjs'),
   );
   assert.match(startup, /existsSync\('server\.js'\)/);
-  assert.match(startup, /standalone \? \['server\.js'\] : \['start'\]/);
+  assert.match(
+    startup,
+    /standalone \? \['server\.js'\] : \['node_modules\/next\/dist\/bin\/next', 'start'\]/,
+  );
   assert.match(startup, /DIRECT_DATABASE_URL = environment\.DATABASE_URL/);
 });

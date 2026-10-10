@@ -1,0 +1,25 @@
+OTA container context exclusion review — 10 October 2026
+
+The previous .dockerignore excluded database main files and some journals, but
+did not explicitly cover SQLite WAL/SHM sidecars or local private-key bundles.
+The builder copies the build context, so those files must remain outside it.
+
+Added patterns: *.db*, *.sqlite*, *.pem, *.key, *.p12 and *.pfx.
+Existing environment-file, backup, dependency and generated-output exclusions remain.
+The deployment contract verifier now rejects omission of these required exclusions.
+No database, backup, key or credential file was deleted or opened by this change.
+No container or production service was deployed.
+
+Verification: npm run deployment:verify and targeted lint.
+Evidence: ../outputs/ota-container-exclusions-2026-10-10.log and
+../outputs/ota-container-exclusions-lint-2026-10-10.log.
+Docker is unavailable on this host, so image construction and inspection remain
+pending in a Docker-capable release environment. These are source contract checks,
+not evidence that an image has been built or scanned.
+
+Next external handoff
+GitHub CLI authentication is configured for account 6239917932. This independent
+OTA checkout has no Git repository or remote. The approved OTA repository name/URL
+must be identified before creating a remote or pushing source. PMS and the Group
+site must remain in their own repositories/releases. No remote was created or changed.
+Production PostgreSQL, providers, policy approvals and hosting remain separate gates.

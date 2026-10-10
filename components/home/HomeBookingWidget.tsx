@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 
 import { formatIndiaCalendarDate, offsetLocalCalendarDate } from '@/utils/localDate';
 
@@ -53,14 +53,22 @@ function Field({
 export function HomeBookingWidget() {
   const today = formatIndiaCalendarDate();
   const [activeProduct, setActiveProduct] = useState<BookingProduct>('hotels');
+  const productTabs = useRef<Array<HTMLButtonElement | null>>([]);
   const [hotelCheckIn, setHotelCheckIn] = useState(today);
   const [hotelCheckOut, setHotelCheckOut] = useState(offsetLocalCalendarDate(today, 1));
   const active = PRODUCTS.find((product) => product.value === activeProduct) ?? PRODUCTS[0];
+  const updateCheckIn = (nextCheckIn: string) => {
+    if (!nextCheckIn) return;
+    setHotelCheckIn(nextCheckIn);
+    if (hotelCheckOut <= nextCheckIn) {
+      setHotelCheckOut(offsetLocalCalendarDate(nextCheckIn, 1));
+    }
+  };
 
   return (
     <div className="home-booking-widget">
       <div aria-label="Choose a booking type" className="home-booking-widget__tabs" role="tablist">
-        {PRODUCTS.map((product) => (
+        {PRODUCTS.map((product, index) => (
           <button
             aria-controls="home-booking-panel"
             aria-selected={activeProduct === product.value}
@@ -68,7 +76,27 @@ export function HomeBookingWidget() {
             id={`home-product-${product.value}`}
             key={product.value}
             onClick={() => setActiveProduct(product.value)}
+            onKeyDown={(event) => {
+              const nextIndex =
+                event.key === 'ArrowRight'
+                  ? (index + 1) % PRODUCTS.length
+                  : event.key === 'ArrowLeft'
+                    ? (index + PRODUCTS.length - 1) % PRODUCTS.length
+                    : event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? PRODUCTS.length - 1
+                        : undefined;
+              if (nextIndex === undefined) return;
+              event.preventDefault();
+              setActiveProduct(PRODUCTS[nextIndex].value);
+              productTabs.current[nextIndex]?.focus();
+            }}
+            ref={(button) => {
+              productTabs.current[index] = button;
+            }}
             role="tab"
+            tabIndex={activeProduct === product.value ? 0 : -1}
             type="button"
           >
             <ProductIcon product={product.value} />
@@ -93,18 +121,15 @@ export function HomeBookingWidget() {
                 label="Where are you going?"
                 name="destination"
                 placeholder="City, area, or hotel"
+                autoComplete="off"
+                list="travel-destination-suggestions"
               />
               <Field
                 label="Check-in"
                 min={today}
                 name="checkInDate"
-                onChange={(event) => {
-                  const nextCheckIn = event.target.value;
-                  setHotelCheckIn(nextCheckIn);
-                  if (hotelCheckOut <= nextCheckIn) {
-                    setHotelCheckOut(offsetLocalCalendarDate(nextCheckIn, 1));
-                  }
-                }}
+                onChange={(event) => updateCheckIn(event.target.value)}
+                onInput={(event) => updateCheckIn(event.currentTarget.value)}
                 type="date"
                 value={hotelCheckIn}
               />
@@ -113,6 +138,7 @@ export function HomeBookingWidget() {
                 min={offsetLocalCalendarDate(hotelCheckIn, 1)}
                 name="checkOutDate"
                 onChange={(event) => setHotelCheckOut(event.target.value)}
+                onInput={(event) => setHotelCheckOut(event.currentTarget.value)}
                 type="date"
                 value={hotelCheckOut}
               />
@@ -125,6 +151,11 @@ export function HomeBookingWidget() {
                   <option value="4">4 guests</option>
                 </select>
               </label>
+              <datalist id="travel-destination-suggestions">
+                {['Bir Billing', 'Mandi', 'Manali', 'Shimla', 'Dharamshala'].map((place) => (
+                  <option key={place} value={place} />
+                ))}
+              </datalist>
               <input name="children" type="hidden" value="0" />
               <input name="rooms" type="hidden" value="1" />
             </>
@@ -146,8 +177,8 @@ export function HomeBookingWidget() {
           <div>
             <strong>{active.label} are coming soon</strong>
             <p>
-              We will activate live search only after a verified supplier API is connected and
-              tested. No demonstration fare will be presented as live inventory.
+              We’re getting this service ready. You can search hotel stays now, or contact our team
+              for updates on new travel services.
             </p>
           </div>
           <a href="/contact">Ask to be notified</a>
@@ -157,7 +188,7 @@ export function HomeBookingWidget() {
       <div className="home-booking-widget__benefits" aria-label="Booking benefits">
         <span>Secure booking journey</span>
         <span>Clear prices</span>
-        <span>Managed inventory</span>
+        <span>Room details</span>
         <span>Human support</span>
       </div>
     </div>

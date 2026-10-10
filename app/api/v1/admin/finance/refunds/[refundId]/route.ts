@@ -160,6 +160,16 @@ export async function PATCH(request: Request, context: RouteContext) {
         paymentId: claimed.payment.id,
         reason: `Provider-confirmed full refund completed by refund ${claimed.id}.`,
       });
+      const approvedRefunds = await transaction.refundRequest.aggregate({
+        _sum: { amount: true },
+        where: { paymentId: claimed.payment.id, status: 'APPROVED' },
+      });
+      if ((approvedRefunds._sum.amount ?? 0) >= claimed.payment.amount) {
+        await transaction.paymentTransaction.updateMany({
+          data: { status: 'refunded' },
+          where: { id: claimed.payment.id, status: 'captured' },
+        });
+      }
       return transaction.refundRequest.findUnique({ where: { id: claimed.id } });
     });
     if (!refund) {

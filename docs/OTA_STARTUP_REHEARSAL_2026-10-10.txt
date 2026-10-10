@@ -1,0 +1,46 @@
+OTA release launcher portability and sequencing — 10 October 2026
+
+Problem and correction
+On this Windows Node 22 host, spawnSync('npm.cmd', ['--version']) returned EINVAL.
+The production launcher used that invocation style for PostgreSQL migration and
+non-standalone server startup. A fully configured release could therefore fail
+after passing preflight without reaching the required migration or web command.
+
+scripts/start-production.mjs now invokes installed JavaScript CLI entry points
+through process.execPath on all platforms:
+- Prisma: node_modules/prisma/build/index.js migrate deploy --config
+  prisma.postgresql.config.ts, equivalent to package db:deploy:postgresql.
+- Next: node_modules/next/dist/bin/next start for normal output.
+- Standalone output continues to invoke server.js through Node.
+No shell interpolation or .cmd execution is needed. Existing environment and
+release checks remain; no validation bypass or real deployment was introduced.
+
+Behavioral rehearsal
+tests/ota-startup-sequence.test.mts copies the actual launcher into unique local
+directories under ../outputs/ota-startup-rehearsal. Downstream CLI/check scripts
+are inert stubs recording only their stage name; no credentials are inherited,
+database is connected, administrator is changed or network/provider is called.
+
+Six scenarios verify the actual launcher:
+1. Failed preflight stops before migration.
+2. Failed migration stops before schema verification.
+3. Failed schema check stops before administrator verification.
+4. Failed administrator check stops before serving traffic.
+5. Normal output starts the Next CLI only after all preceding gates pass.
+6. Standalone output starts server.js only after all preceding gates pass.
+Failure exit codes propagate. CLI argument checks verify the PostgreSQL config and
+Next start command. Trace files retain local evidence without row data or tokens.
+
+Focused checks, including real incomplete-environment preflight and existing runtime
+contracts: 10 passed. See ../outputs/ota-startup-checks-2026-10-10.log.
+Full domain suite: 641 passed. All seven offline readiness checks, targeted lint
+and formatting passed after the launcher correction.
+Full offline readiness, targeted lint and formatting evidence are recorded in
+../outputs/ota-startup-*-2026-10-10.log and ota-offline-readiness/report.json.
+
+Limits
+The stubs establish launch order, failure handling and process portability. They
+do not certify PostgreSQL live migrations, provider secrets, production hosting,
+container execution or an actual web artifact under approved release settings.
+The existing production release gates remain pending. Web application source and
+the current domain are unchanged; no deployment or live data migration occurred.

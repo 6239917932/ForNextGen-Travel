@@ -26,7 +26,6 @@ export const adminWorkspaceNavigation = [
     items: [
       { code: 'SP', href: '/admin/partners', label: 'Suppliers' },
       { code: 'AP', href: '/admin/partner-applications', label: 'Supplier applications' },
-      { code: 'EN', href: '/admin/partners/onboarding', label: 'Partner enrollment' },
       { code: 'CA', href: '/admin/catalog', label: 'Supply catalog' },
       { code: 'IN', href: '/admin/inventory', label: 'Inventory and rates' },
     ],

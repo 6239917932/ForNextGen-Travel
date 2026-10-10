@@ -49,10 +49,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       },
       {
         audience: 'partner',
-        description: 'Operate an approved hotel or property-management account.',
+        description: 'Operate an approved hotel or hotel supplier account.',
         features: [
-          'PMS, listings, rates, and inventory',
-          'Reservations and guest operations',
+          'Listings, rates, and inventory',
+          'Marketplace bookings and amendments',
           'Applications, compliance, and settlements',
         ],
         href: '/login?portal=partner&returnTo=%2Fpartner',

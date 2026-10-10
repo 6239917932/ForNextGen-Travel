@@ -7,7 +7,7 @@ test('empty Hotel and Car workspaces provide a direct inventory setup action', a
 
   assert.match(page, /No inventory has been added\./);
   assert.match(page, /href="\/partner\/properties">\s*Create the first property/);
-  assert.match(page, /href="\/partner\/fleet">\s*Add the first vehicle/);
+  assert.match(page, /access\.partnerType === 'CAR'\) redirect\('\/partner\/fleet'\)/);
 });
 
 test('fleet mutations recover from network failures and retain stable form references', async () => {

@@ -10,17 +10,18 @@ import {
 import { partnerHotelInventoryRepository } from '@/repositories/partnerHotelInventoryRepository';
 import { distanceInKilometres } from '@/lib/hotel/geo';
 import { hotelAmenityMatches } from '@/lib/hotel/amenities';
+import { hotelStayInputIssue } from '@/lib/hotel/stayRequest';
+import { hotelRateStayPrice } from '@/lib/hotel/stayPrice';
 import type {
   Hotel,
-  HotelRatePlan,
   HotelSearchCriteria,
   HotelSearchFilters,
   HotelSearchPage,
   HotelSearchResult,
-  Money,
 } from '@/types/hotel';
 import type { HotelRepository } from '@/repositories/hotelRepository';
-import { formatIndiaCalendarDate, isValidCalendarDate } from '@/utils/localDate';
+
+export class HotelSearchInputError extends Error {}
 
 function calculateNights(checkInDate: string, checkOutDate: string): number {
   const checkIn = new Date(`${checkInDate}T00:00:00Z`);
@@ -57,25 +58,6 @@ function matchesDestination(hotel: Hotel, destination: string): boolean {
   return searchableText.includes(normalizedDestination);
 }
 
-function findLowestRatePlan(ratePlans: HotelRatePlan[]): HotelRatePlan | undefined {
-  return ratePlans.reduce<HotelRatePlan | undefined>((lowestRatePlan, currentRatePlan) => {
-    if (!lowestRatePlan || currentRatePlan.nightlyRate.amount < lowestRatePlan.nightlyRate.amount) {
-      return currentRatePlan;
-    }
-
-    return lowestRatePlan;
-  }, undefined);
-}
-
-function calculateTotalStayPrice(ratePlan: HotelRatePlan, nights: number, rooms: number): Money {
-  const nightlyTotal = ratePlan.nightlyRate.amount + ratePlan.taxesAndFees.amount;
-
-  return {
-    amount: nightlyTotal * nights * rooms,
-    currency: ratePlan.nightlyRate.currency,
-  };
-}
-
 export class HotelService {
   constructor(
     private readonly hotelRepository: HotelRepository = new InMemoryHotelRepository(),
@@ -95,17 +77,9 @@ export class HotelService {
     criteria: HotelSearchCriteria,
     filters: HotelSearchFilters,
   ): Promise<HotelSearchPage> {
-    if (!isValidCalendarDate(criteria.checkInDate) || !isValidCalendarDate(criteria.checkOutDate)) {
-      throw new Error('Enter valid check-in and check-out dates.');
-    }
-    if (criteria.checkInDate < formatIndiaCalendarDate()) {
-      throw new Error('Check-in date cannot be in the past.');
-    }
+    const issue = hotelStayInputIssue(criteria);
+    if (issue) throw new HotelSearchInputError(issue.message);
     const nights = calculateNights(criteria.checkInDate, criteria.checkOutDate);
-
-    if (!Number.isFinite(nights) || nights < 1) {
-      throw new Error('Check-out date must be later than check-in date.');
-    }
 
     const hotels = await this.hotelRepository.findAll();
 
@@ -162,7 +136,7 @@ export class HotelService {
               overrideLimit ?? room.inventoryCount,
               partnerControl.availableRooms ?? room.inventoryCount,
             );
-            return effectiveInventory - reservedRooms >= criteria.rooms;
+            return !partnerControl.stopSell && effectiveInventory - reservedRooms >= criteria.rooms;
           }),
         );
 
@@ -185,24 +159,26 @@ export class HotelService {
                     ratePlan.nightlyRate.amount,
                     ratePlan.id,
                   );
-                  return {
-                    ...ratePlan,
-                    nightlyRate: {
-                      ...ratePlan.nightlyRate,
-                      amount: Math.round(control.averageNightlyRate ?? ratePlan.nightlyRate.amount),
-                    },
-                  };
+                  if (control.stopSell) return undefined;
+                  return hotelRateStayPrice(
+                    ratePlan,
+                    nights,
+                    criteria.rooms,
+                    control.nightlyCharge,
+                  );
                 }),
             ),
         );
 
-        const lowestRatePlan = findLowestRatePlan(availableRatePlans);
-
-        if (
-          !lowestRatePlan ||
-          (filters.maximumNightlyRate > 0 &&
-            lowestRatePlan.nightlyRate.amount > filters.maximumNightlyRate)
-        ) {
+        const lowestRatePlan = availableRatePlans
+          .filter(
+            (price): price is NonNullable<typeof price> =>
+              Boolean(price) &&
+              (!filters.maximumNightlyRate ||
+                price!.nightlyRate.amount <= filters.maximumNightlyRate),
+          )
+          .sort((first, second) => first.total.amount - second.total.amount)[0];
+        if (!lowestRatePlan) {
           return undefined;
         }
 
@@ -219,7 +195,7 @@ export class HotelService {
           isAvailable: true,
           minimumNightlyRate: lowestRatePlan.nightlyRate,
           nights,
-          totalStayPrice: calculateTotalStayPrice(lowestRatePlan, nights, criteria.rooms),
+          totalStayPrice: lowestRatePlan.total,
         };
       }),
     );
@@ -229,7 +205,7 @@ export class HotelService {
     );
     sortedResults.sort((firstResult, secondResult) => {
       if (filters.sort === 'price-descending') {
-        return secondResult.minimumNightlyRate.amount - firstResult.minimumNightlyRate.amount;
+        return secondResult.totalStayPrice.amount - firstResult.totalStayPrice.amount;
       }
       if (filters.sort === 'rating-descending') {
         return (
@@ -238,7 +214,7 @@ export class HotelService {
           secondResult.hotel.reviewSummary.reviewCount - firstResult.hotel.reviewSummary.reviewCount
         );
       }
-      return firstResult.minimumNightlyRate.amount - secondResult.minimumNightlyRate.amount;
+      return firstResult.totalStayPrice.amount - secondResult.totalStayPrice.amount;
     });
 
     const pageSize = 10;
