@@ -3,7 +3,7 @@ OTA remaining work — 11 October 2026
 Draft PR: https://github.com/6239917932/ForNextGen-Travel/pull/277
 Latest change: a9c2324 adds disposable CI PostgreSQL backup/restore verification.
 Previous head b4c9540 passed portal quality, Docker build, PostgreSQL schema, and CodeQL.
-New recovery verification is pending hosted CI; local syntax and refusal outside isolated CI are verified.
+Hosted CI at head 234cfba passed full portal quality, Docker runner build, PostgreSQL recovery/schema, and CodeQL. The dependency audit remains failed. Evidence: https://github.com/6239917932/ForNextGen-Travel/actions/runs/38113296437
 The rehearsal compares schema, public table row counts, migration history, and synthetic decimal/Unicode records. It creates a new restore database without replacing existing databases. Only the JSON report is uploaded, never a database dump.
 
 Remaining release gates:
