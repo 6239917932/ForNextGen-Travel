@@ -108,6 +108,74 @@ jobs:
       - name: Build standalone web image
         run: docker build --target runner --tag mandyal-travels:${{ github.sha }} .
 
+      - name: Verify production startup refuses missing release configuration
+        run: |
+          if docker run --name ota-release-refusal mandyal-travels:${{ github.sha }} > container-release-refusal.log 2>&1; then
+            echo "Incomplete production release unexpectedly started"
+            exit 1
+          fi
+          grep -F 'PUBLIC_APP_ORIGIN or RAILWAY_PUBLIC_DOMAIN is required.' container-release-refusal.log
+
+      - name: Start packaged OTA preview with an isolated database
+        run: |
+          docker run --detach --name ota-container-preview \
+            --publish 127.0.0.1:3029:3000 \
+            --env DATABASE_URL=file:/data/container-ci.db \
+            --env PUBLIC_APP_ORIGIN=http://127.0.0.1:3029 \
+            --env PUBLIC_INDEXING_ENABLED=false \
+            --env BOOKING_TOKEN_SECRET=ci-only-container-booking-token-secret \
+            --env SESSION_SECRET=ci-only-container-session-secret \
+            --env PARTNER_ADMIN_KEY=ci-only-container-partner-admin-secret \
+            --entrypoint sh mandyal-travels:${{ github.sha }} \
+            -c 'node node_modules/prisma/build/index.js migrate deploy --config prisma.config.ts && exec node server.js'
+
+      - name: Verify packaged OTA readiness and public routes
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const origin = 'http://127.0.0.1:3029';
+          let ready = false;
+          for (let attempt = 0; attempt < 60; attempt++) {
+            try {
+              const response = await fetch(origin + '/api/v1/health', { signal: AbortSignal.timeout(3000) });
+              if (response.ok) {
+                const body = await response.json();
+                assert.equal(body.data.database, 'ready');
+                assert.equal(body.data.schema, 'ready');
+                ready = true;
+                break;
+              }
+            } catch {}
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          assert.ok(ready, 'Packaged container failed database readiness');
+          for (const path of ['/', '/login', '/contact', '/robots.txt']) {
+            const response = await fetch(origin + path, { signal: AbortSignal.timeout(10000) });
+            assert.equal(response.status, 200, path);
+            const body = await response.text();
+            if (path === '/') assert.match(body, /<html/i);
+            if (path === '/robots.txt') assert.match(body, /Disallow: \/\s/);
+          }
+          for (const path of ['/partner/pms', '/partner/housekeeping', '/partner/channels']) {
+            assert.equal((await fetch(origin + path)).status, 404, path);
+          }
+          console.log('Packaged OTA preview: database readiness, public routes, no-index policy and PMS exclusion passed.');
+          JS
+          test "$(docker exec ota-container-preview id -u)" != '0'
+
+      - name: Retain container runtime evidence
+        if: always()
+        run: docker logs ota-container-preview > container-preview.log 2>&1 || true
+
+      - name: Upload container runtime logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ota-container-runtime
+          retention-days: 7
+          path: |
+            container-preview.log
+            container-release-refusal.log
   postgresql:
     runs-on: ubuntu-latest
     timeout-minutes: 15
