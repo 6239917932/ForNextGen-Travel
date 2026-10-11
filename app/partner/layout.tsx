@@ -1,79 +1,52 @@
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
-
 import { WorkspaceShell, type WorkspaceNavigationGroup } from '@/components/layout/WorkspaceShell';
 import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
-import { getPmsModuleHref, pmsModuleGroups, pmsModules } from '@/lib/pms/moduleRegistry';
-
-type PartnerLayoutProps = Readonly<{
-  children: ReactNode;
-}>;
-
-export default async function PartnerLayout({ children }: PartnerLayoutProps) {
+export default async function PartnerLayout({ children }: Readonly<{ children: ReactNode }>) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?returnTo=/partner');
-
   const access = await getPartnerAccess();
   if (!access?.partnerId || !access.userId) redirect('/partners/apply');
-
-  const hotelGroups: readonly WorkspaceNavigationGroup[] = [
+  const groups: readonly WorkspaceNavigationGroup[] = [
     {
-      label: 'Partner workspace',
-      items: [
-        { code: 'PW', href: '/partner', label: 'Partner dashboard' },
-        { code: 'CP', href: '/partner/compliance', label: 'Compliance' },
-        { code: 'TX', href: '/partner/tax', label: 'Tax and billing' },
-        { code: 'ST', href: '/partner/settlements', label: 'Settlements' },
-        { code: 'LG', href: '/partner/activity', label: 'Activity log' },
-      ],
-    },
-    ...pmsModuleGroups.map((group) => ({
-      label: group,
-      items: pmsModules
-        .filter((module) => module.group === group)
-        .map((module) => ({
-          code: module.code,
-          href: getPmsModuleHref(module),
-          label: module.name === 'Dashboard' ? 'PMS dashboard' : module.name,
-          note:
-            module.status === 'LIVE'
-              ? undefined
-              : `Phase ${module.phase} · ${module.status.toLowerCase()}`,
-        })),
-    })),
-  ];
-  const transportGroups: readonly WorkspaceNavigationGroup[] = [
-    {
-      label: 'Partner workspace',
+      label: 'Travel supplier workspace',
       items: [
         { code: 'DB', href: '/partner', label: 'Dashboard' },
-        ...(access.partnerType === 'CAR'
+        ...(access.partnerType === 'HOTEL'
           ? [
-              { code: 'FL', href: '/partner/fleet', label: 'Fleet' },
-              { code: 'RS', href: '/partner/reservations', label: 'Reservations' },
+              { code: 'PR', href: '/partner/properties', label: 'Hotel listings' },
+              { code: 'IN', href: '/partner/inventory', label: 'Rates and availability' },
+              { code: 'BK', href: '/partner/bookings', label: 'Travel bookings' },
+              { code: 'AM', href: '/partner/amendments', label: 'Amendments' },
+              { code: 'RV', href: '/partner/reviews', label: 'Guest reviews' },
             ]
-          : access.partnerType === 'BUS'
+          : access.partnerType === 'CAR'
             ? [
-                { code: 'BO', href: '/partner/bus-operations', label: 'Bus operations' },
-                { code: 'BR', href: '/partner/bus-bookings', label: 'Bus bookings' },
+                { code: 'FL', href: '/partner/fleet', label: 'Fleet' },
+                { code: 'RS', href: '/partner/reservations', label: 'Reservations' },
               ]
-            : [{ code: 'FL', href: '/partner/flights', label: 'Flight operations' }]),
+            : access.partnerType === 'BUS'
+              ? [
+                  { code: 'BO', href: '/partner/bus-operations', label: 'Bus supply' },
+                  { code: 'BB', href: '/partner/bus-bookings', label: 'Bus bookings' },
+                ]
+              : [{ code: 'FL', href: '/partner/flights', label: 'Flight supply' }]),
         { code: 'RP', href: '/partner/reports', label: 'Reports' },
         { code: 'CP', href: '/partner/compliance', label: 'Compliance' },
-        { code: 'TX', href: '/partner/tax', label: 'Tax and billing' },
+        { code: 'TX', href: '/partner/tax', label: 'Tax profile' },
         { code: 'ST', href: '/partner/settlements', label: 'Settlements' },
-        { code: 'LG', href: '/partner/activity', label: 'Activity log' },
+        { code: 'AC', href: '/partner/access', label: 'Team access' },
+        { code: 'LG', href: '/partner/activity', label: 'Activity' },
       ],
     },
   ];
-
   return (
     <WorkspaceShell
-      groups={access.partnerType === 'HOTEL' ? hotelGroups : transportGroups}
+      groups={groups}
       identity={user.email}
-      subtitle={`${access.partnerType ?? 'Supplier'} operations`}
-      title={access.partnerName ?? 'Mandyal Partner'}
+      subtitle="Travel marketplace supply"
+      title={access.partnerName ?? 'Travel supplier'}
     >
       {children}
     </WorkspaceShell>

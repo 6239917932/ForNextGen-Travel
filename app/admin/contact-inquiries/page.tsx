@@ -56,7 +56,7 @@ export default async function AdminContactInquiriesPage({
       <header className="admin-hero">
         <div>
           <p className="hotel-page__eyebrow">Public message inbox</p>
-          <h1>Contact inquiries and PMS requests</h1>
+          <h1>Contact inquiries</h1>
           <p>
             Review the newest customer, hotel-owner, and car-owner messages captured by the public
             contact form.

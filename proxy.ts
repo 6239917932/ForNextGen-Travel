@@ -3,8 +3,9 @@ import type { NextRequest } from 'next/server';
 
 import { correlationIdFromHeader } from '@/lib/api/correlation';
 import { isTrustedPortalMutation } from '@/lib/api/portalOrigin';
+import { isRemovedPmsApiPath } from '@/lib/ota/removedApiRoutes';
 
-const SESSION_COOKIE_NAME = 'mandyal_session';
+const SESSION_COOKIE_NAME = 'fornextgen_travel_session';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const PARTNER_MUTATIONS_ENABLED = process.env.PARTNER_MUTATIONS_ENABLED === 'true';
 
@@ -38,6 +39,13 @@ export function proxy(request: NextRequest) {
   const requestId = correlationIdFromHeader(request.headers.get('x-request-id'));
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
+
+  if (isRemovedPmsApiPath(request.nextUrl.pathname)) {
+    return NextResponse.json(
+      { error: { code: 'NOT_FOUND', message: 'This endpoint is unavailable.' } },
+      { status: 404, headers: { 'x-request-id': requestId } },
+    );
+  }
 
   if (
     !SAFE_METHODS.has(request.method) &&

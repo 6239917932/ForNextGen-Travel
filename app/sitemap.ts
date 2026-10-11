@@ -5,12 +5,14 @@ import { absolutePublicUrl, buildPublicSitemapRecords } from '@/lib/seo/publicIn
 import { resolvePublicPortalOrigin } from '@/lib/url/publicOrigin';
 import { prisma } from '@/lib/prisma';
 import { hotelService } from '@/services/hotelService';
+import { isPublicIndexingEnabled } from '@/lib/seo/indexingPolicy';
 
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (!isPublicIndexingEnabled()) return [];
   const origin = resolvePublicPortalOrigin();
-  const [hotels, destinations] = await Promise.all([
+  const [hotelResult, destinationResult] = await Promise.allSettled([
     hotelService.getHotels(),
     prisma.destinationContent.findMany({
       orderBy: { slug: 'asc' },
@@ -18,6 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       where: { status: 'PUBLISHED' },
     }),
   ]);
+  const hotels = hotelResult.status === 'fulfilled' ? hotelResult.value : [];
+  const destinations = destinationResult.status === 'fulfilled' ? destinationResult.value : [];
   const records = buildPublicSitemapRecords({
     destinations,
     hotelSlugs: hotels.map((hotel) => hotel.slug),

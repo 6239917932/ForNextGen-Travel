@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { isPublicIndexingEnabled } from './indexingPolicy.ts';
 
-export const PUBLIC_SITE_ORIGIN = 'https://www.mandyaltravels.com';
+export const PUBLIC_SITE_ORIGIN = process.env.PUBLIC_APP_ORIGIN ?? 'https://www.mandyaltravels.com';
 export const PUBLIC_SITE_NAME = 'Mandyal Travels';
 export const PUBLIC_SHARE_IMAGE = '/home/mandyal-travel-hero-v2.png';
 
@@ -17,6 +18,7 @@ export function createPublicMetadata({
   path,
   title,
 }: PublicMetadataInput): Metadata {
+  const index = isPublicIndexingEnabled();
   return {
     alternates: { canonical: path },
     description,
@@ -37,15 +39,15 @@ export function createPublicMetadata({
       url: path,
     },
     robots: {
-      follow: true,
+      follow: index,
       googleBot: {
-        follow: true,
-        index: true,
+        follow: index,
+        index,
         'max-image-preview': 'large',
         'max-snippet': -1,
         'max-video-preview': -1,
       },
-      index: true,
+      index,
     },
     title: absoluteTitle ? { absolute: title } : title,
     twitter: {

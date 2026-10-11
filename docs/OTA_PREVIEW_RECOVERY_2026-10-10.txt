@@ -1,0 +1,34 @@
+Independent OTA preview recovery — 10 October 2026
+
+Run npm run test:ota:recovery from ota-staging after the independent preview has
+initialized its database. Run while no sample bookings or other writes are in flight;
+the command rejects changed source row counts and can be retried once idle.
+
+The fixed source is prisma/ota-preview-independent.db. The command never loads
+dotenv, never accepts DATABASE_URL overrides and refuses real environment files.
+It opens the source read-only and uses SQLite's online backup API. A unique run
+directory under ../outputs/ota-preview-recovery holds snapshot.db, its SHA-256
+sidecar, restored.db and report.json. No retention deletion occurs.
+
+Verification
+- Source and restored integrity_check and foreign_key_check.
+- All table row counts, including bookings, payment transactions, refund requests
+  and applied migration history, match.
+- Backup and restore bytes match the saved checksum.
+- Deliberately corrupted bytes are rejected before copying a restore.
+- A transactional write on the restored copy succeeds and rolls back; subsequent
+  integrity, row counts and file checksum remain unchanged.
+- Report includes counts and checks, never row content, credentials or booking tokens.
+
+Result: passed for 151 tables. Evidence:
+../outputs/ota-preview-recovery/f41300eb-11cd-4e13-8905-57d413b4cac5/report.json
+Console log: ../outputs/ota-preview-recovery-2026-10-10.log
+The source database was not modified. Existing source snapshots were preserved.
+Retained database copies are local recovery artifacts and are excluded from source
+packages; treat them as data, even when the present preview contains synthetic records.
+
+Scope limitations
+This verifies the independent local SQLite preview only. It does not establish
+PostgreSQL backup/PITR, managed-host availability, production restore objectives,
+provider reconciliation, real-data cutover or a deployment approval. Those release
+gates in OTA_RELEASE_STATUS_2026-10-10.txt remain pending.

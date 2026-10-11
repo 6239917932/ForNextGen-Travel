@@ -1,5 +1,13 @@
 # Mandyal Travels Project Status
 
+Current OTA extraction review: 10 October 2026. This checkout is the independent
+ForNextGen Travel OTA project. The older combined-platform status below is historical,
+and does not mean PMS operational screens are part of this checkout. See
+`docs/OTA_RELEASE_STATUS_2026-10-10.txt` for current checks and remaining release gates.
+The live domain is unchanged; this review does not authorize deployment or payment activation.
+The broader audit and remediation record is `docs/OTA_AUDIT_2026-10-10.txt`, including
+pricing, cancellation/refund, dependency and indexing fixes and remaining release gates.
+
 Last reviewed: 7 September 2026
 
 The current launch-gate register is maintained in

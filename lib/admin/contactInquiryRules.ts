@@ -6,7 +6,7 @@ export function contactCategoryLabel(category: string): string {
   return (
     (
       {
-        HOTEL_OWNER: 'Hotel / PMS request',
+        HOTEL_OWNER: 'Hotel supplier request',
         CAR_OWNER: 'Car owner',
         BOOKING_HELP: 'Booking help',
         GENERAL: 'General',

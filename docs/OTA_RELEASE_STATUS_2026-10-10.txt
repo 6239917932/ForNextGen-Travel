@@ -1,0 +1,78 @@
+ForNextGen Travel — isolated OTA release status, 10 October 2026
+
+Scope and ownership
+This checkout is the OTA extraction, not the separate ForNextGen PMS project.
+PMS operational screens and mutation routes remain removed. Hotel supplier
+listings, room types, rates, availability, OTA bookings and amendments remain.
+Shared schema history and the few shared booking helpers are intentionally kept.
+Do not remove database models or run a live data cutover as part of a UI release.
+
+Current identity
+The legal operator, support contacts and public domain remain Mandyal Travels.
+The planned ForNextGen Travel domain change is a separate business cutover.
+Historical combined-platform status documents are not evidence of current OTA scope.
+
+Local preview and source preservation
+Run npm ci, npm run db:generate and npm run preview:ota from this checkout.
+The preview uses its own SQLite database on 127.0.0.1:3049, excludes provider/live
+credentials, labels sample hotel inventory and uses Webpack on Windows.
+Production cannot serve fixtures, even if an inventory flag is accidentally enabled.
+The preview generates an ephemeral booking token key per run; restarting rotates it.
+Use npm run test:ota:sample while the preview runs to exercise synthetic quote,
+booking, access denial and cancellation/refund-request paths without provider calls.
+Cancellation creates a pending refund request; payment is not marked refunded until
+full provider-confirmed approval. Public indexing defaults off; an approved release
+must set PUBLIC_INDEXING_ENABLED=true at both build and runtime with fixtures disabled.
+Safe snapshots exclude dependencies, generated build/client files, databases,
+backups, real environment files and private keys. Historical snapshots are preserved.
+
+Release validation
+Current build, lint, TypeScript, domain test, migration and runtime evidence is
+saved in the parent outputs folder with a 2026-10-10 suffix. A source package is
+only a saved implementation; it does not prove provider or production readiness.
+See docs/OTA_AUDIT_2026-10-10.txt for the broader audit, fixes and scoped limitations.
+The Windows production compiler prepares generated route output directories serially
+before concurrent file emission. The isolated Windows preview separately prepares
+its generated route folders once at startup, including the virtual 404 route.
+Neither preparation deletes files or changes application data.
+Linux retains the standard Next build configuration.
+
+Repeatable offline readiness milestone
+Run npm run readiness:ota from this checkout. It repeats domain tests (including
+OTA separation), static links, API contract, temporary SQLite migration rehearsal,
+PostgreSQL source contract parity, deployment contract and launch-register checks.
+It inherits only OS process settings, not provider or database credentials, and
+refuses a checkout containing real .env files (the example file is permitted).
+Logs and report.json are written to ../outputs/ota-offline-readiness. The command
+returns nonzero on failure and does not mark production ready when all checks pass.
+This command does not run a production build, contact live providers or deploy.
+Use the separate build/runtime evidence and approved production verification later.
+The next local recovery milestone is complete: npm run test:ota:recovery checks a
+read-only snapshot and isolated restore of the independent preview. See
+docs/OTA_PREVIEW_RECOVERY_2026-10-10.txt. This is not PostgreSQL/PITR evidence.
+
+Production remains blocked until independently evidenced
+1. Approve and provision the separate OTA PostgreSQL deployment and credentials,
+   backup/PITR/HA policy, isolated restore evidence and data cutover/rollback plan.
+2. Configure unique OTA session, token, MFA and worker secrets through a secret store.
+3. Complete hotel supply contracts, certification and real inventory verification.
+   Flights, cars and buses must remain unavailable until approved adapters are certified.
+4. Approve and configure the actual collection/refund/payout providers and webhooks;
+   retain payment reconciliation and settlement certification. Never activate paid
+   providers, charge or pay suppliers during local checks.
+5. Obtain counsel's policy approval and configure media/KYC storage, transactional
+   email authentication, worker schedules, monitoring and administrator MFA.
+6. Identify the approved GitHub repository and connect an independent OTA release target.
+   GitHub CLI authentication is configured; no repository or remote exists here yet.
+   Neither this checkout nor its snapshots authorizes changing the live Mandyal service.
+7. Verify the exact release artifact in its production-like environment, then approve
+   any public cutover separately. No deployment was performed in this review.
+
+Keep the startup preflight before migrations and administrator provisioning.
+Missing release requirements must fail before any live database change.
+The launcher portability/sequence rehearsal is complete; see
+docs/OTA_STARTUP_REHEARSAL_2026-10-10.txt. Windows startup invokes installed CLI
+entry points through Node, and isolated stub tests verify each failure boundary.
+These tests do not replace approved production database or container rehearsals.
+Container context exclusions now cover SQLite sidecars and private-key bundles;
+see docs/OTA_CONTAINER_CONTEXT_2026-10-10.txt. Docker image verification remains pending.

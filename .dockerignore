@@ -15,6 +15,14 @@ build
 *.db-journal
 *.sqlite
 *.sqlite3
+# Include SQLite WAL/SHM/journal sidecars and alternate database extensions.
+*.db*
+*.sqlite*
+# Local signing, TLS and exported credential bundles must not enter image layers.
+*.pem
+*.key
+*.p12
+*.pfx
 backups
 prisma/backups
 

@@ -1,0 +1,18 @@
+OTA remaining work — 11 October 2026
+
+Draft PR: https://github.com/6239917932/ForNextGen-Travel/pull/277
+Latest change: a9c2324 adds disposable CI PostgreSQL backup/restore verification.
+Previous head b4c9540 passed portal quality, Docker build, PostgreSQL schema, and CodeQL.
+Hosted CI at head 234cfba passed full portal quality, Docker runner build, PostgreSQL recovery/schema, and CodeQL. The dependency audit remains failed. Evidence: https://github.com/6239917932/ForNextGen-Travel/actions/runs/38113296437
+The rehearsal compares schema, public table row counts, migration history, and synthetic decimal/Unicode records. It creates a new restore database without replacing existing databases. Only the JSON report is uploaded, never a database dump.
+
+Remaining release gates:
+- Resolve five high development lint-chain dependency advisories when a compatible patched dependency becomes available. No forced incompatible downgrade or audit exception is approved.
+- Approve managed PostgreSQL hosting, credentials, roles, production backup/PITR, real-data migration and rollback rehearsal.
+- Provision separate OTA secrets and operational workers; certify email delivery and administrator MFA/on-call readiness.
+- Certify supplier contracts and real inventory; cars, flights and buses remain unavailable.
+- Certify payment collection, refund, payout, webhook and reconciliation workflows.
+- Approve legal policies, media/KYC and production deployment/domain cutover.
+
+This CI rehearsal does not certify managed production recovery or authorize launch.
+PMS remains a separate project; this chat maintains OTA scope.

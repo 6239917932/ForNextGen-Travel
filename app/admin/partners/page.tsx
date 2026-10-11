@@ -3,50 +3,46 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { AdminPartnerReview } from '@/components/admin/AdminPartnerReview';
-import { AdminPrivateTrialWorkspaceForm } from '@/components/admin/AdminPrivateTrialWorkspaceForm';
 import { Card } from '@/components/ui/Card';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
 import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
-import { getPrivateTrialWorkspaceState } from '@/services/partnerTrialWorkspaceService';
 
 export const metadata: Metadata = { title: 'Supplier administration' };
 
 export default async function AdminPartnersPage() {
   if (!(await getPlatformAdmin())) redirect('/login?returnTo=/admin/partners');
-  const [applications, partners, pendingProperties, pendingVehicles, privateTrial] =
-    await Promise.all([
-      prisma.partnerApplication.findMany({
-        include: {
-          applicant: { select: { email: true, firstName: true, lastName: true } },
-          kycDocuments: true,
-        },
-        orderBy: { createdAt: 'asc' },
-        where: { status: 'PENDING' },
-      }),
-      prisma.supplyPartner.findMany({
-        include: { _count: { select: { members: true, properties: true, vehicles: true } } },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.partnerProperty.findMany({
-        include: {
-          partner: { select: { id: true, name: true } },
-          rooms: { select: { id: true }, where: { status: 'ACTIVE' } },
-        },
-        orderBy: [{ submittedAt: 'asc' }, { createdAt: 'asc' }],
-        where: {
-          approvalStatus: 'PENDING_REVIEW',
-          listingSource: 'MANAGED',
-          status: 'ACTIVE',
-        },
-      }),
-      prisma.partnerVehicle.findMany({
-        include: { partner: { select: { id: true, name: true } } },
-        orderBy: [{ submittedAt: 'asc' }, { createdAt: 'asc' }],
-        where: { approvalStatus: 'PENDING_REVIEW', status: { not: 'ARCHIVED' } },
-      }),
-      getPrivateTrialWorkspaceState(),
-    ]);
+  const [applications, partners, pendingProperties, pendingVehicles] = await Promise.all([
+    prisma.partnerApplication.findMany({
+      include: {
+        applicant: { select: { email: true, firstName: true, lastName: true } },
+        kycDocuments: true,
+      },
+      orderBy: { createdAt: 'asc' },
+      where: { status: 'PENDING' },
+    }),
+    prisma.supplyPartner.findMany({
+      include: { _count: { select: { members: true, properties: true, vehicles: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.partnerProperty.findMany({
+      include: {
+        partner: { select: { id: true, name: true } },
+        rooms: { select: { id: true }, where: { status: 'ACTIVE' } },
+      },
+      orderBy: [{ submittedAt: 'asc' }, { createdAt: 'asc' }],
+      where: {
+        approvalStatus: 'PENDING_REVIEW',
+        listingSource: 'MANAGED',
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.partnerVehicle.findMany({
+      include: { partner: { select: { id: true, name: true } } },
+      orderBy: [{ submittedAt: 'asc' }, { createdAt: 'asc' }],
+      where: { approvalStatus: 'PENDING_REVIEW', status: { not: 'ARCHIVED' } },
+    }),
+  ]);
   return (
     <section className="account-page supplier-admin admin-workspace">
       <header className="admin-hero">
@@ -62,14 +58,12 @@ export default async function AdminPartnersPage() {
             className="ui-button ui-button--secondary"
             href="/admin/contact-inquiries?category=HOTEL_OWNER"
           >
-            PMS enquiries
+            Partner enquiries
           </Link>
           <Link className="ui-button ui-button--secondary" href="/admin/partner-applications">
             Application history
           </Link>
-          <Link className="ui-button ui-button--secondary" href="/admin/partners/onboarding">
-            Enrollment operations
-          </Link>
+
           <Link className="ui-button ui-button--secondary" href="/admin">
             Operations console
           </Link>
@@ -93,20 +87,7 @@ export default async function AdminPartnersPage() {
           <strong>{partners.filter((p) => p.type === 'CAR').length}</strong>
         </Card>
       </div>
-      <section>
-        <p className="hotel-page__eyebrow">Private partner trial</p>
-        <h2>Grant a dedicated hotel or car trial account</h2>
-        <Card>
-          {privateTrial.enabled ? (
-            <AdminPrivateTrialWorkspaceForm />
-          ) : (
-            <p>
-              Private trial provisioning is locked because one or more commercial or public
-              marketplace features are active.
-            </p>
-          )}
-        </Card>
-      </section>
+
       <section>
         <p className="hotel-page__eyebrow">Verification queue</p>
         <h2>Pending applications</h2>

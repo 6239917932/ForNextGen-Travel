@@ -4,6 +4,8 @@ import { createBookingAccessToken, hashBookingAccessToken } from '@/lib/bookingA
 import { createBookingReference } from '@/lib/confirmationCode';
 import { prisma } from '@/lib/prisma';
 import { formatIndiaCalendarDate } from '@/utils/localDate';
+import { hotelStayInputIssue } from '@/lib/hotel/stayRequest';
+import { hotelRateStayPrice } from '@/lib/hotel/stayPrice';
 
 import {
   availabilityLockRepository,
@@ -136,26 +138,9 @@ export class HotelBookingService {
   ) {}
 
   async createQuote(request: HotelQuoteRequest): Promise<HotelQuote> {
+    const issue = hotelStayInputIssue(request);
+    if (issue) throw new HotelBookingRuleError(issue.code, issue.message);
     const nights = calculateNights(request.checkInDate, request.checkOutDate);
-
-    if (!Number.isFinite(nights) || nights < 1) {
-      throw new HotelBookingRuleError(
-        'INVALID_STAY_DATES',
-        'Check-out date must be later than check-in date.',
-      );
-    }
-
-    const today = formatIndiaCalendarDate();
-    if (request.checkInDate < today) {
-      throw new HotelBookingRuleError('PAST_CHECK_IN', 'Check-in date cannot be in the past.');
-    }
-
-    if (request.rooms < 1 || request.adults < 1 || request.children < 0) {
-      throw new HotelBookingRuleError(
-        'INVALID_OCCUPANCY',
-        'Rooms and adults must be at least one, and children cannot be negative.',
-      );
-    }
 
     const hotel = await this.hotels.getHotelBySlug(request.hotelSlug);
     if (!hotel) {
@@ -234,6 +219,15 @@ export class HotelBookingService {
     );
     const roomChargeAmount =
       (rateControl.nightlyCharge ?? ratePlan.nightlyRate.amount * nights) * request.rooms;
+    if (
+      rateControl.stopSell ||
+      !hotelRateStayPrice(ratePlan, nights, request.rooms, rateControl.nightlyCharge)
+    ) {
+      throw new HotelBookingRuleError(
+        'RATE_UNAVAILABLE',
+        'The selected rate is unavailable for this stay.',
+      );
+    }
     const taxAndFeeAmount = ratePlan.taxesAndFees.amount * nights * request.rooms;
     const components: PriceComponent[] = [
       {

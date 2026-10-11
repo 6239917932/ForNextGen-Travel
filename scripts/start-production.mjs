@@ -2,7 +2,6 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import process from 'node:process';
 
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const environment = { ...process.env };
 
 if (!environment.PUBLIC_APP_ORIGIN) {
@@ -18,10 +17,32 @@ if (!environment.DIRECT_DATABASE_URL && environment.DATABASE_URL) {
   environment.DIRECT_DATABASE_URL = environment.DATABASE_URL;
 }
 
-const migration = spawnSync(npmCommand, ['run', 'db:deploy:postgresql'], {
+// Reject an incomplete release before touching a database or provisioning users.
+const preflight = spawnSync(process.execPath, ['scripts/verify-release-env.mjs'], {
   env: environment,
   stdio: 'inherit',
 });
+if (preflight.error) {
+  console.error('Unable to verify the release environment.', preflight.error);
+  process.exit(1);
+}
+if (preflight.status !== 0) process.exit(preflight.status ?? 1);
+
+// Same CLI as db:deploy:postgresql, without Windows .cmd shell execution.
+const migration = spawnSync(
+  process.execPath,
+  [
+    'node_modules/prisma/build/index.js',
+    'migrate',
+    'deploy',
+    '--config',
+    'prisma.postgresql.config.ts',
+  ],
+  {
+    env: environment,
+    stdio: 'inherit',
+  },
+);
 
 if (migration.error) {
   console.error('Unable to start the PostgreSQL migration process.', migration.error);
@@ -64,8 +85,8 @@ if (administratorProvisioning.status !== 0) {
 
 const standalone = existsSync('server.js');
 const portal = spawn(
-  standalone ? process.execPath : npmCommand,
-  standalone ? ['server.js'] : ['start'],
+  process.execPath,
+  standalone ? ['server.js'] : ['node_modules/next/dist/bin/next', 'start'],
   {
     env: environment,
     stdio: 'inherit',

@@ -143,7 +143,7 @@ export default async function AdminSupplyCatalogPage({
       <Card>
         <strong>Internal provenance only</strong>
         <p>
-          Mandyal PMS/local and external API supplier labels are visible here for operations. They
+          Direct hotel supply and external API supplier labels are visible here for operations. They
           remain hidden from customer hotel results and detail pages.
         </p>
       </Card>
@@ -166,7 +166,7 @@ export default async function AdminSupplyCatalogPage({
           <span className="ui-field__label">Inventory source</span>
           <select className="ui-input" defaultValue={filters.source} name="source">
             <option value="ALL">All sources</option>
-            <option value="DIRECT">Mandyal PMS/local</option>
+            <option value="DIRECT">Direct hotel supply</option>
             <option value="EXTERNAL">External API supplier</option>
           </select>
         </label>
@@ -220,7 +220,7 @@ export default async function AdminSupplyCatalogPage({
               <strong>{filtered.length.toLocaleString('en-IN')}</strong>
             </Card>
             <Card>
-              <span>Mandyal PMS/local</span>
+              <span>Direct hotel supply</span>
               <strong>{directCount.toLocaleString('en-IN')}</strong>
             </Card>
             <Card>
@@ -268,7 +268,7 @@ export default async function AdminSupplyCatalogPage({
                           </Link>
                           <strong>
                             {source === 'DIRECT'
-                              ? 'Mandyal PMS/local inventory'
+                              ? 'Direct hotel supply inventory'
                               : 'External API supplier inventory'}
                           </strong>
                           <span>{property.partner.status.toLowerCase()} supplier</span>

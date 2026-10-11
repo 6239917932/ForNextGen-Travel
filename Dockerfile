@@ -13,7 +13,13 @@ RUN apt-get update -y \
 
 FROM base AS dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+# Compile the SQLite preview adapter explicitly: dependency lifecycle scripts
+# remain disabled, and compiler tools stay outside the final runner stage.
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm ci --ignore-scripts \
+  && npm rebuild better-sqlite3 --build-from-source
 
 FROM dependencies AS builder
 ARG DATABASE_URL=file:/tmp/mandyal-build.db
@@ -62,6 +68,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.postgresql.config.ts ./prisma.postgresql.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 USER nextjs

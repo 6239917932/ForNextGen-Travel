@@ -8,7 +8,7 @@ import {
   createAccountSecurityEventData,
 } from '@/services/accountSecurityService';
 
-export const SESSION_COOKIE_NAME = 'mandyal_session';
+export const SESSION_COOKIE_NAME = 'fornextgen_travel_session';
 const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 const MAX_ACTIVE_SESSIONS_PER_USER = 10;
 

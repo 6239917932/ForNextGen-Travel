@@ -24,7 +24,8 @@ test('public booking forms prevent past dates and link end dates to start dates'
 
 test('hotel discovery rejects malformed and historical dates on the server', () => {
   const service = source('services/hotelService.ts');
-  assert.match(service, /isValidCalendarDate\(criteria\.checkInDate\)/);
-  assert.match(service, /criteria\.checkInDate < formatIndiaCalendarDate\(\)/);
-  assert.match(service, /Check-in date cannot be in the past/);
+  assert.match(service, /hotelStayInputIssue\(criteria\)/);
+  const rules = source('lib/hotel/stayRequest.ts');
+  assert.match(rules, /isValidCalendarDate\(input\.checkInDate\)/);
+  assert.match(rules, /input\.checkInDate < today/);
 });

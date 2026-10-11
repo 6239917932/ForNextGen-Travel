@@ -1,307 +1,83 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-
 import { Card } from '@/components/ui/Card';
-import { getCurrentUser } from '@/lib/auth/session';
 import { getPartnerAccess } from '@/lib/partnerAuth';
-import { prisma } from '@/lib/prisma';
 import { hotelBookingService } from '@/services/hotelBookingService';
-import { partnerOperationsService } from '@/services/partnerOperationsService';
-
-export const metadata: Metadata = { title: 'Partner workspace' };
-
-function money(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    currency: 'INR',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(amount);
-}
-
-function formatDate(value: Date): string {
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(value);
-}
-
+import { prisma } from '@/lib/prisma';
 export default async function PartnerWorkspacePage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login?returnTo=/partner');
-
   const access = await getPartnerAccess();
   if (!access?.partnerId || !access.userId) redirect('/partners/apply');
   if (access.partnerType === 'BUS') redirect('/partner/bus-operations');
   if (access.partnerType === 'FLIGHT') redirect('/partner/flights');
-
-  const [partner, bookingSummary, pendingAmendments] = await Promise.all([
-    prisma.supplyPartner.findUnique({
-      include: {
-        auditEntries: {
-          include: { actor: { select: { firstName: true, lastName: true } } },
-          orderBy: { createdAt: 'desc' },
-          take: 8,
-        },
-        properties: {
-          include: { rooms: { where: { status: 'ACTIVE' } } },
-          orderBy: { displayName: 'asc' },
-          where: { status: 'ACTIVE' },
-        },
-        vehicles: {
-          include: {
-            inventoryDays: {
-              where: { serviceDate: { gte: new Date().toISOString().slice(0, 10) } },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-      where: { id: access.partnerId },
-    }),
-    access.partnerType === 'HOTEL'
-      ? hotelBookingService.getPartnerBookingSummary({ hotelSlugs: access.allowedHotelSlugs })
-      : partnerOperationsService.getVehicleReservationSummary(access.partnerId),
-    access.partnerType === 'HOTEL'
-      ? hotelBookingService.getPendingAmendmentCount(access.allowedHotelSlugs)
-      : Promise.resolve(0),
-  ]);
-  if (!partner) redirect('/partners');
-
+  if (access.partnerType === 'CAR') redirect('/partner/fleet');
+  const summary = await hotelBookingService.getPartnerBookingSummary({
+    hotelSlugs: access.allowedHotelSlugs,
+  });
+  const propertyCount = await prisma.partnerProperty.count({
+    where: { partnerId: access.partnerId, listingSource: 'MANAGED', status: 'ACTIVE' },
+  });
   return (
     <section className="account-page partner-workspace">
       <header className="admin-hero">
         <div className="admin-hero__content">
-          <p className="admin-hero__eyebrow">Secure supplier workspace</p>
-          <h1>{partner.name}</h1>
+          <p className="admin-hero__eyebrow">Travel supplier workspace</p>
+          <h1>{access.partnerName}</h1>
           <p>
-            Welcome, {user.firstName}. Manage only the inventory assigned to this verified supplier
-            account.
+            Manage your travel listings, availability, booking requests and marketplace settlements.
           </p>
         </div>
-        <div className="admin-hero__posture">
-          <span className="admin-hero__secure">{partner.type} supply partner</span>
-          <strong>
-            {pendingAmendments
-              ? `${pendingAmendments} amendments need review`
-              : 'Operations are clear'}
-          </strong>
-          <span>
-            {partner.type === 'CAR'
-              ? `${partner.vehicles.length} fleet records`
-              : `${partner.properties.length} assigned properties`}
-          </span>
-          <span>Access is restricted to named partner accounts.</span>
-        </div>
       </header>
-
+      {propertyCount === 0 ? (
+        <Card>
+          <h2>No inventory has been added.</h2>
+          <p>Add your hotel listing and room types to prepare marketplace availability.</p>
+          <Link className="home-card__link" href="/partner/properties">
+            Create the first property
+          </Link>
+        </Card>
+      ) : null}
       <div className="partner-bookings__summary">
         <Card>
-          <span>{partner.type === 'CAR' ? 'Fleet records' : 'Assigned properties'}</span>
-          <strong>
-            {partner.type === 'CAR' ? partner.vehicles.length : partner.properties.length}
-          </strong>
+          <span>Total bookings</span>
+          <strong>{summary.totalCount}</strong>
         </Card>
         <Card>
-          <span>{partner.type === 'CAR' ? 'Reservations' : 'Total bookings'}</span>
-          <strong>{bookingSummary.totalCount}</strong>
-        </Card>
-        <Card>
-          <span>{partner.type === 'CAR' ? 'Confirmed rentals' : 'Confirmed stays'}</span>
-          <strong>{bookingSummary.confirmedCount}</strong>
-        </Card>
-        <Card>
-          <span>Captured value</span>
-          <strong>{money(bookingSummary.capturedInrValue)}</strong>
-        </Card>
-        <Card>
-          <span>Pending amendments</span>
-          <strong>{pendingAmendments}</strong>
+          <span>Confirmed bookings</span>
+          <strong>{summary.confirmedCount}</strong>
         </Card>
       </div>
-
-      {partner.type === 'HOTEL' ? (
-        <div className="partner-workspace__links">
-          <Card>
-            <p className="hotel-page__eyebrow">Hotel operations</p>
-            <h2>Mandyal PMS control centre</h2>
-            <p>Open the unified front-office, room, revenue, finance, and operations workspace.</p>
-            <Link className="home-card__link" href="/partner/pms">
-              Open PMS
+      <div className="partner-workspace__links">
+        {[
+          [
+            '/partner/properties',
+            'Hotel listings',
+            'Manage room types, photos, policies and published listings.',
+          ],
+          [
+            '/partner/inventory',
+            'Rates and availability',
+            'Set dated prices, sellable capacity and stay restrictions.',
+          ],
+          ['/partner/bookings', 'Travel bookings', 'Review reservations and payment status.'],
+          [
+            '/partner/amendments',
+            'Booking amendments',
+            'Review guest changes through the existing servicing controls.',
+          ],
+          [
+            '/partner/settlements',
+            'Settlements',
+            'Review marketplace commissions and supplier settlements.',
+          ],
+        ].map(([href, title, description]) => (
+          <Card key={href}>
+            <h2>{title}</h2>
+            <p>{description}</p>
+            <Link className="home-card__link" href={href}>
+              Open {title.toLowerCase()}
             </Link>
           </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Property setup</p>
-            <h2>Rooms and rates</h2>
-            <p>Create properties, room types, opening rates, policies, and public listings.</p>
-            <Link className="home-card__link" href="/partner/properties">
-              Manage properties
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Reservations</p>
-            <h2>Booking operations</h2>
-            <p>Review guests, stay dates, allocation, booking state, and payment status.</p>
-            <Link className="home-card__link" href="/partner/bookings">
-              Open booking dashboard
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Availability</p>
-            <h2>Room inventory</h2>
-            <p>Monitor allocations and apply an audited stop-sell or inventory limit.</p>
-            <Link className="home-card__link" href="/partner/inventory">
-              Open inventory dashboard
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Guest changes</p>
-            <h2>Amendment queue</h2>
-            <p>Approve or decline date-change requests after availability and price checks.</p>
-            <Link className="home-card__link" href="/partner/amendments">
-              Review amendments
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Distribution</p>
-            <h2>Distribution command centre</h2>
-            <p>
-              Set master rates and availability once, then export the portals requiring a manual
-              update.
-            </p>
-            <Link className="home-card__link" href="/partner/channels">
-              Manage channels
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Guest feedback</p>
-            <h2>Reviews and responses</h2>
-            <p>Read published verified-stay reviews and post an audited property response.</p>
-            <Link className="home-card__link" href="/partner/reviews">
-              Manage reviews
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Supplier finance</p>
-            <h2>Settlement statements</h2>
-            <p>Review captured value, commission, net payable, approvals, and payment status.</p>
-            <Link className="home-card__link" href="/partner/settlements">
-              View settlements
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Room operations</p>
-            <h2>Housekeeping board</h2>
-            <p>Coordinate dirty, cleaning, ready, and out-of-service rooms with front desk.</p>
-            <Link className="home-card__link" href="/partner/housekeeping">
-              Open housekeeping
-            </Link>
-          </Card>
-        </div>
-      ) : (
-        <div className="partner-workspace__links">
-          <Card>
-            <p className="hotel-page__eyebrow">Reservations</p>
-            <h2>Rental operations</h2>
-            <p>Review confirmed drivers, routes, rental dates, vehicle assignment, and value.</p>
-            <Link className="home-card__link" href="/partner/reservations">
-              Open reservations
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Vehicles</p>
-            <h2>Fleet catalogue</h2>
-            <p>Add vehicles and operating routes with commercial terms and capacity.</p>
-            <Link className="home-card__link" href="/partner/fleet">
-              Manage fleet
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Yield and availability</p>
-            <h2>Daily fleet calendar</h2>
-            <p>Override daily rates, available units, and stop-sales for maintenance.</p>
-            <Link className="home-card__link" href="/partner/fleet">
-              Open calendar
-            </Link>
-          </Card>
-          <Card>
-            <p className="hotel-page__eyebrow">Distribution</p>
-            <h2>Live customer channel</h2>
-            <p>Review how active, available direct fleet offers appear to customers.</p>
-            <Link className="home-card__link" href="/cars">
-              View car search
-            </Link>
-          </Card>
-        </div>
-      )}
-
-      <div className="partner-workspace__columns">
-        <section>
-          <p className="hotel-page__eyebrow">Property scope</p>
-          <h2>{partner.type === 'CAR' ? 'Fleet inventory' : 'Hotel catalogue'}</h2>
-          <div className="partner-workspace__properties">
-            {partner.type === 'HOTEL'
-              ? partner.properties.map((property) => (
-                  <Card key={property.id}>
-                    <strong>{property.displayName}</strong>
-                    <span>{property.hotelSlug}</span>
-                    <small>
-                      {property.rooms.length} room types ·{' '}
-                      {property.publicationStatus.toLowerCase()}
-                    </small>
-                  </Card>
-                ))
-              : partner.vehicles.map((vehicle) => (
-                  <Card key={vehicle.id}>
-                    <strong>{vehicle.vehicleName}</strong>
-                    <span>
-                      {vehicle.pickupLocation} → {vehicle.dropoffLocation}
-                    </span>
-                    <small>
-                      {vehicle.totalUnits} units · ₹{vehicle.pricePerDay.toLocaleString('en-IN')} /
-                      day
-                    </small>
-                  </Card>
-                ))}
-            {partner.properties.length === 0 && partner.vehicles.length === 0 ? (
-              <Card>
-                <strong>No inventory has been added.</strong>
-                {partner.type === 'HOTEL' ? (
-                  <Link className="home-card__link" href="/partner/properties">
-                    Create the first property
-                  </Link>
-                ) : (
-                  <Link className="home-card__link" href="/partner/fleet">
-                    Add the first vehicle
-                  </Link>
-                )}
-              </Card>
-            ) : null}
-          </div>
-        </section>
-        <section>
-          <p className="hotel-page__eyebrow">Accountability</p>
-          <h2>Recent partner activity</h2>
-          <Link className="home-card__link" href="/partner/activity">
-            View complete activity log
-          </Link>
-          <Card className="partner-workspace__audit">
-            {partner.auditEntries.map((entry) => (
-              <div key={entry.id}>
-                <strong>{entry.summary}</strong>
-                <span>
-                  {entry.actor
-                    ? `${entry.actor.firstName} ${entry.actor.lastName}`
-                    : 'Platform integration'}{' '}
-                  · {formatDate(entry.createdAt)}
-                </span>
-              </div>
-            ))}
-            {partner.auditEntries.length === 0 ? (
-              <p>No partner activity has been recorded.</p>
-            ) : null}
-          </Card>
-        </section>
+        ))}
       </div>
     </section>
   );

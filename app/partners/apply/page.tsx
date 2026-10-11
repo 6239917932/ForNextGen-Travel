@@ -3,14 +3,12 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { PartnerApplicationForm } from '@/components/partner/PartnerApplicationForm';
-import { PartnerOnboardingCheckout } from '@/components/partner/PartnerOnboardingCheckout';
 import { FeatureUnavailable } from '@/components/common/FeatureUnavailable';
 import { Card } from '@/components/ui/Card';
 import { getCurrentUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { isPlatformFeatureEnabled } from '@/services/platformFeatureFlagService';
 import { summarizePersistedPartnerKyc } from '@/lib/partner/kycPersistenceRules';
-import { PARTNER_ONBOARDING_PRICE } from '@/lib/partner/onboardingCommercialRules';
 
 export const metadata: Metadata = {
   robots: { follow: false, index: false },
@@ -37,36 +35,6 @@ export default async function PartnerApplicationPage() {
     include: { partner: true },
     where: { userId: user.id },
   });
-  const paidOnboardingEnabled = await isPlatformFeatureEnabled('PAID_PARTNER_ONBOARDING');
-  const enrollment = paidOnboardingEnabled
-    ? await prisma.partnerOnboardingOrder.findFirst({
-        include: {
-          agreementAcceptance: {
-            include: {
-              agreementVersion: { include: { release: true } },
-              phoneVerification: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        where: { status: { in: ['CAPTURED', 'WAIVED'] }, userId: user.id },
-      })
-    : null;
-  const agreement = enrollment?.agreementAcceptance?.agreementVersion;
-  const phone = enrollment?.agreementAcceptance?.phoneVerification;
-  const enrollmentComplete = Boolean(
-    enrollment?.completedAt &&
-    enrollment.agreementAcceptance &&
-    enrollment.agreementAcceptance.contentHash === agreement?.contentHash &&
-    agreement?.status === 'APPROVED' &&
-    agreement.release?.key === 'SUPPLIER_ONBOARDING' &&
-    agreement.effectiveAt &&
-    agreement.effectiveAt <= new Date() &&
-    phone?.status === 'VERIFIED' &&
-    phone.verifiedAt &&
-    phone.expiresAt > new Date(),
-  );
-
   if (membership) redirect('/partner');
   const kycSummary =
     application &&
@@ -88,42 +56,8 @@ export default async function PartnerApplicationPage() {
           Tell us about your property. Access is activated only after a platform administrator
           reviews the business and hotel documentation.
         </p>
-        <Card>
-          <p className="hotel-page__eyebrow">Supplier software plan</p>
-          <h2>
-            ₹{(PARTNER_ONBOARDING_PRICE.oneTimeSetupAmount / 100).toLocaleString('en-IN')} setup + ₹
-            {(PARTNER_ONBOARDING_PRICE.monthlySubscriptionAmount / 100).toLocaleString('en-IN')}
-            /month
-          </h2>
-          <p>
-            Approved launch coupons can waive the first amount, including reducing it to ₹0. A
-            coupon never bypasses identity, agreement, tax, safety, or listing review.
-          </p>
-          <small>
-            Recurring billing starts only after a separate mandate and consent. Payment enrollment
-            remains disabled until PayU reconciliation, phone OTP, and the management-approved
-            agreement release are active.
-          </small>
-        </Card>
       </div>
-      {paidOnboardingEnabled && !enrollment ? (
-        <PartnerOnboardingCheckout />
-      ) : paidOnboardingEnabled && !enrollmentComplete ? (
-        <Card className="partner-application__status">
-          <span className="business-request__status business-request__status--pending">
-            Payment recorded
-          </span>
-          <h2>Phone verification and agreement are next.</h2>
-          <p>
-            Your payment or launch waiver is recorded. Application entry remains locked until a
-            current phone OTP is verified and the approved supplier agreement is accepted.
-          </p>
-          <small>
-            Mandyal Travels will enable this step only after the OTP provider and final
-            management-approved agreement are configured. Payment alone never activates a supplier.
-          </small>
-        </Card>
-      ) : application?.status === 'PENDING' ? (
+      {application?.status === 'PENDING' ? (
         <Card className="partner-application__status">
           <span className="business-request__status business-request__status--pending">
             Verification pending

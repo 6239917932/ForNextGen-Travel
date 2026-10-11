@@ -7,7 +7,7 @@ import { contactCategoryLabel } from '@/lib/admin/contactInquiryRules';
 import { getPlatformAdmin } from '@/lib/adminAuth';
 import { prisma } from '@/lib/prisma';
 
-export const metadata: Metadata = { title: 'Review contact or PMS request' };
+export const metadata: Metadata = { title: 'Review contact inquiry' };
 
 export default async function AdminContactInquiryPage({
   params,

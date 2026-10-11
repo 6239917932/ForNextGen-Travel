@@ -1,0 +1,27 @@
+{
+  "removed": [
+    "components\\partner\\BanquetControls.tsx",
+    "components\\partner\\BookingAddonControls.tsx",
+    "components\\partner\\CaptainGuestOrderLink.tsx",
+    "components\\partner\\ChannelSyncManager.tsx",
+    "components\\partner\\ExpenseControls.tsx",
+    "components\\partner\\FixedAssetControls.tsx",
+    "components\\partner\\GuestRegistrationForm.tsx",
+    "components\\partner\\HotelFolioControls.tsx",
+    "components\\partner\\HotelPosControls.tsx",
+    "components\\partner\\HotelSplitBillingControls.tsx",
+    "components\\partner\\HousekeepingMaintenanceControls.tsx",
+    "components\\partner\\HousekeepingRoomActions.tsx",
+    "components\\partner\\LostFoundControls.tsx",
+    "components\\partner\\NightAuditCloseForm.tsx",
+    "components\\partner\\OperationalDocumentSettings.tsx",
+    "components\\partner\\PartnerPrivacyEvidenceForm.tsx",
+    "components\\partner\\PayrollControls.tsx",
+    "components\\partner\\ProcurementControls.tsx",
+    "components\\partner\\RestaurantCatalogControls.tsx",
+    "components\\partner\\StockInventoryControls.tsx",
+    "components\\partner\\TallyMappingForm.tsx",
+    "components\\partner\\VendorManagementControls.tsx",
+    "components\\partner\\WalkInBookingManager.tsx"
+  ]
+}
