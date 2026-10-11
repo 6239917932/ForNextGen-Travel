@@ -147,3 +147,22 @@ jobs:
 
       - name: Verify live PostgreSQL schema
         run: npm run db:verify:postgresql:live
+
+      - name: Rehearse isolated PostgreSQL backup and restore
+        env:
+          OTA_CI_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: node scripts/rehearse-ci-postgresql-recovery.mjs
+
+      - name: Verify restored PostgreSQL schema
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mandyal_restore_ci?schema=public&sslmode=disable
+          DIRECT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mandyal_restore_ci?schema=public&sslmode=disable
+        run: npm run db:verify:postgresql:live
+
+      - name: Retain PostgreSQL recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgresql-recovery-evidence
+          retention-days: 7
+          path: .gh-task-cache/postgresql-recovery.json
+          if-no-files-found: error
